@@ -1,0 +1,9 @@
+# Apps de Anestesiologia
+
+Ferramentas educacionais em HTML, instaláveis como app (PWA). Dr. Lucas Caetano.
+
+| App | Pasta |
+|---|---|
+| Simulador de Anestesia Pediátrica | `pediatrica/` |
+
+Para atualizar um app: substitua o `index.html` da pasta e incremente a versão do cache no `sw.js` da mesma pasta.

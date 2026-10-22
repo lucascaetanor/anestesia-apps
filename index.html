@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apps de Anestesiologia</title>
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="theme-color" content="#090d18">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#090d18;--card:#0f1628;--border:#1e2d50;--green:#1D9E75;--text:#e8edf8;--muted:#8a9bc4}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding:40px 16px}
+  main{max-width:720px;margin:0 auto}
+  h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(26px,6vw,38px);line-height:1.15}
+  .sub{color:var(--muted);margin:8px 0 32px;font-size:15px}
+  .grid{display:grid;gap:14px}
+  a.app{display:flex;gap:16px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-decoration:none;color:inherit;transition:border-color .2s,transform .1s}
+  a.app:hover{border-color:var(--green)}
+  a.app:active{transform:scale(.99)}
+  a.app img{width:56px;height:56px;border-radius:12px;flex-shrink:0}
+  .t{font-weight:600;font-size:17px}
+  .d{color:var(--muted);font-size:13px;margin-top:2px}
+  footer{color:var(--muted);font-size:12px;text-align:center;margin-top:48px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Apps de Anestesiologia</h1>
+  <p class="sub">Ferramentas educacionais &bull; Dr. Lucas Caetano</p>
+  <div class="grid">
+    <a class="app" href="pediatrica/">
+      <img src="pediatrica/icon-192.png" alt="">
+      <div><div class="t">Simulador de Anestesia Pediátrica</div><div class="d">Via aérea, doses por peso, ventilação, hidratação, adrenalina e ficha A4</div></div>
+    </a>
+  </div>
+  <footer>Material educacional — não substitui julgamento clínico.</footer>
+</main>
+</body>
+</html>
