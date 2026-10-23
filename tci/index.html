@@ -96,6 +96,19 @@ header{display:flex;align-items:center;gap:12px;padding:16px 0 14px}
 .next b{display:block;color:var(--text);font-size:17px;font-variant-numeric:tabular-nums}
 .next .cd{font-family:var(--mono);color:var(--or2)}
 .next.soon b{color:var(--or)}
+.dose{font-size:12.5px;color:var(--muted);margin-top:4px}
+.syr{margin-top:12px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px}
+.sbar{height:6px;border-radius:4px;background:#0d0d0f;overflow:hidden}
+.sbar i{display:block;height:100%;background:var(--muted);border-radius:4px;transition:width .4s}
+.syr .stx{font-size:12.5px;color:var(--muted);margin-top:7px}
+.syr .stx b{color:var(--text)}
+.syr.low .sbar i{background:var(--or)}
+.syr.low{border-color:var(--orline)}
+.syr.empty{border-color:var(--bad)}
+.syr.empty .sbar i{background:var(--bad)}
+.sbtn{display:flex;gap:6px;margin-top:8px}
+.sbtn button{flex:1;height:36px}
+.sbtn button.on{border-color:var(--or);color:#111;background:var(--or);font-weight:700}
 .conc{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
 .conc div{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:7px 9px}
 .conc span{display:block;font-size:11px;color:var(--muted)}
@@ -239,6 +252,10 @@ footer .lc{color:var(--or);font-weight:700}
     </div></div>
   <div class="grp" id="aTolG"><label>Tolerância dos degraus</label><div class="chips" id="aTol"></div>
     <div style="font-size:12px;color:var(--dim);margin-top:6px">Quanto maior, menos trocas de taxa e maior oscilação da Cp em torno do alvo.</div></div>
+  <div class="grp"><label>Seringa</label><div class="chips" id="aSyr"></div></div>
+  <div class="grp"><label>Como dar o bolus</label><div class="seg" id="aBolM"><button data-v="flash">Manual (instantâneo)</button><button data-v="pump">Pela bomba</button></div>
+    <div class="row" id="aMaxRow" style="display:none"><div class="field" style="flex:1"><label>Velocidade máxima da bomba</label><div class="in"><input id="aMax" type="number" inputmode="numeric" value="1200"><span class="u">ml/h</span></div></div></div>
+    <div style="font-size:12px;color:var(--dim);margin-top:6px">Pela bomba, o volume é infundido na velocidade máxima; o algoritmo considera a redistribuição durante o bolus.</div></div>
   <div class="grp"><label>Limiar de Ce para "despertar" / recuperação</label><div class="field"><div class="in"><input id="aThr" type="number" inputmode="decimal"><span class="u" id="aThrU"></span></div></div></div>
   <div id="aWarn"></div>
   <button class="btn pri" id="aOk" style="width:100%;margin-top:6px">Iniciar</button>
@@ -453,14 +470,32 @@ var PK = (function () {
 
   // ---------- Planejadores ----------
   // o = {conc, tol, maxMlh}
+  // bolus de duração contínua (s) na velocidade máxima -> degrau inteiro com taxa ajustada
+  function pumpBolus(o, secs) {
+    var ml = r1(o.bolusMlh * secs / 3600); if (ml < 0.1) ml = 0.1;
+    var dur = Math.max(1, Math.ceil(ml / o.bolusMlh * 3600));
+    var mlh = r1(ml / dur * 3600);
+    return { t: 0, rate: mlh * o.conc / 60, mlh: mlh, dur: dur, bolusInf: true, bolusMl: mlh * dur / 3600 };
+  }
   function planCp(p, x0, t0, target, o, tEnd, allowLoad) {
     unit(p);
     var ev = [], x = Float64Array.from(x0), t = t0, bolus = 0, first = true;
     if (allowLoad) {
       var cp0 = x[0] / p.V1;
       if (cp0 < target * (1 - o.tol / 2)) {
-        var ml = r1((target - cp0) * p.V1 / o.conc);
-        bolus = ml * o.conc; x[0] += bolus;
+        if (o.bolusMlh) {
+          // bolus pela bomba: infunde na velocidade máxima até a Cp atingir o alvo
+          var rb = o.bolusMlh * o.conc / 60, a = Float64Array.from(x), b = new Float64Array(5), tmp, Db = 0, prev = cp0;
+          a[4] = rb / 60;
+          while (a[0] / p.V1 < target && Db < 3600) { prev = a[0] / p.V1; stepIn(p.F1, a, b); tmp = a; a = b; b = tmp; Db++; }
+          var fr0 = a[0] / p.V1 > prev ? (target - prev) / (a[0] / p.V1 - prev) : 1;
+          var bi = pumpBolus(o, Math.max(0.2, Db - 1 + Math.min(1, Math.max(0, fr0))));
+          bi.t = t; ev.push(bi);
+          x = advance(p, x, bi.rate, bi.dur); t += bi.dur; first = false;
+        } else {
+          var ml = r1((target - cp0) * p.V1 / o.conc);
+          bolus = ml * o.conc; x[0] += bolus;
+        }
       }
     }
     while (t < tEnd) {
@@ -487,7 +522,7 @@ var PK = (function () {
       }
       if (first) { if (bolus) e.bolus = bolus; first = false; }
       var last = ev[ev.length - 1];
-      if (last && !e.bolus && last.mlh === e.mlh) last.dur += e.dur; else ev.push(e);
+      if (last && !e.bolus && !last.bolusInf && last.mlh === e.mlh) last.dur += e.dur; else ev.push(e);
       x = advance(p, x, e.rate, e.dur); t += e.dur;
     }
     return { ev: ev, x: x, t: t };
@@ -498,7 +533,30 @@ var PK = (function () {
     var fr = traj(p, x0, 0, DMAX), maxF = 0, iMax = 0, i;
     for (i = 0; i <= DMAX; i++) if (fr.ce[i] > maxF) { maxF = fr.ce[i]; iMax = i; }
     var ev = [], x, rest, tp;
-    if (maxF < target * 0.99) {
+    if (maxF < target * 0.99 && o.bolusMlh) {
+      var rbc = o.bolusMlh * o.conc / 60;
+      var peakFor = function (Db) {
+        var a = Float64Array.from(x0), b = new Float64Array(5), tmp, m = 0, tq = 0, k;
+        a[4] = rbc / 60;
+        for (k = 0; k < Db; k++) { stepIn(p.F1, a, b); tmp = a; a = b; b = tmp; if (a[3] > m) { m = a[3]; tq = k + 1; } }
+        a[4] = 0;
+        for (k = Db; k < Db + DMAX; k++) { stepIn(p.F1, a, b); tmp = a; a = b; b = tmp; if (a[3] > m) { m = a[3]; tq = k + 1; } else if (a[3] < m * 0.999) break; }
+        return [m, tq];
+      };
+      var hiD = 1; while (peakFor(hiD)[0] < target && hiD < 3600) hiD *= 2;
+      var loD = 0;
+      while (hiD - loD > 1) { var md = (loD + hiD) >> 1; if (peakFor(md)[0] >= target) hiD = md; else loD = md; }
+      var pLo = loD ? peakFor(loD)[0] : x0[3], pHi = peakFor(hiD)[0];
+      var fD = loD + (pHi > pLo ? Math.min(1, Math.max(0, (target - pLo) / (pHi - pLo))) : 1);
+      var bi = pumpBolus(o, Math.max(0.2, fD)); bi.t = t0;
+      x = advance(p, x0, bi.rate, bi.dur);
+      var fr2 = traj(p, x, 0, DMAX), m2 = -1, q = 0;
+      for (i = 0; i <= DMAX; i++) { if (fr2.ce[i] > m2) { m2 = fr2.ce[i]; q = i; } else if (fr2.ce[i] < m2 * 0.999) break; }
+      tp = bi.dur + q;
+      ev.push(bi);
+      if (q > 0) { ev.push({ t: t0 + bi.dur, rate: 0, mlh: 0, dur: q, pause: true, peak: true }); x = advance(p, x, 0, q); }
+      rest = planCp(p, x, t0 + tp, target, o, tEnd, false);
+    } else if (maxF < target * 0.99) {
       var lo = 0, hi = target * p.V1 * 60;
       var peakOf = function (B) { var m = 0; for (var k = 0; k <= DMAX; k++) { var v = fr.ce[k] + B * p._b.ce[k]; if (v > m) m = v; } return m; };
       for (var it = 0; it < 60; it++) { var mid = (lo + hi) / 2; if (peakOf(mid) > target) hi = mid; else lo = mid; }
@@ -617,15 +675,47 @@ if (typeof module !== 'undefined') module.exports = PK;
   }
 
   // ---------- planejamento ----------
-  function opts(d) { return { conc: d.conc, tol: d.tol, maxMlh: 1200 }; }
+  function opts(d) { return { conc: d.conc, tol: d.tol, maxMlh: d.maxMlh || 1200, bolusMlh: d.bolusMode === 'pump' ? (d.maxMlh || 1200) : 0 }; }
+  var DOSE = { propofol: ['mg/kg/h', 1], remi: ['mcg/kg/min', 1 / 60], sufenta: ['mcg/kg/h', 1], fenta: ['mcg/kg/h', 1], alfenta: ['mcg/kg/min', 1 / 60], dexmed: ['mcg/kg/h', 1] };
+  function doseTxt(d, mlh) {
+    var u = DOSE[d.key], v = mlh * d.conc * u[1] / S.pt.wt;
+    var s = fx(v, v < 1 ? 3 : v < 10 ? 2 : 1) + ' ' + u[0];
+    if (d.key === 'propofol') s += ' · ' + Math.round(mlh * d.conc * 1000 / 60 / S.pt.wt) + ' mcg/kg/min';
+    return s;
+  }
+  function timeToEmpty(d, t, rem) {
+    if (rem <= 0) return 0;
+    var acc = 0, i = Math.max(0, curIdx(d, t));
+    for (var k = i; k < d.events.length; k++) {
+      var e = d.events[k], s = Math.max(e.t, t), en = k + 1 < d.events.length ? d.events[k + 1].t : Infinity;
+      if (e.t > t && e.bolus) { acc += e.bolus / d.conc; if (acc >= rem) return e.t - t; }
+      if (en <= s || !(e.mlh > 0)) continue;
+      var v = e.mlh * (en - s) / 3600;
+      if (acc + v >= rem) return s - t + (rem - acc) / e.mlh * 3600;
+      acc += v;
+    }
+    return Infinity;
+  }
+  function syrInfo(d, t) {
+    var used = stats(d, t).vol - (d.refillVol || 0), rem = (d.syr || 50) - used;
+    return { rem: rem, tte: timeToEmpty(d, t, rem) };
+  }
   function replan(d, t) {
     t = Math.floor(t);
     d.events = d.events.filter(function (e) { return e.t < t; });
     d.tgtHist = d.tgtHist.filter(function (h) { return h.t < t; });
     Object.keys(d.ack).forEach(function (k) { if (+k >= t) delete d.ack[k]; });
-    if (d.mode === 'manual') {
-      var e = { t: t, mlh: d.manRate, rate: d.manRate * d.conc / 60 };
-      if (d.manBol > 0) e.bolus = d.manBol * d.conc;
+    if (d.paused) {
+      d.events.push({ t: t, rate: 0, mlh: 0, pause: true, hold: true }); d.planEnd = Infinity; d.endX = null;
+      d.tgtHist.push({ t: t, v: d.mode === 'manual' ? null : d.target });
+    } else if (d.mode === 'manual') {
+      var t2 = t;
+      if (d.manBol > 0 && d.bolusMode === 'pump') {
+        var mx = d.maxMlh || 1200, dur = Math.max(1, Math.round(d.manBol / mx * 3600));
+        d.events.push({ t: t, rate: mx * d.conc / 60, mlh: mx, dur: dur, bolusInf: true, bolusMl: mx * dur / 3600 }); t2 = t + dur;
+      }
+      var e = { t: t2, mlh: d.manRate, rate: d.manRate * d.conc / 60 };
+      if (d.manBol > 0 && d.bolusMode !== 'pump') e.bolus = d.manBol * d.conc;
       d.events.push(e); d.planEnd = Infinity; d.endX = null;
       d.tgtHist.push({ t: t, v: null });
     } else {
@@ -694,7 +784,8 @@ if (typeof module !== 'undefined') module.exports = PK;
     return '<section class="card drug" id="d' + d.id + '" style="border-left-color:' + D[d.key].color + '">' +
       '<div class="dh"><div><div class="nm"></div><div class="sub"></div></div><div class="x"><button class="ib" data-a="edit" title="Editar">⚙</button><button class="ib" data-a="del" title="Remover">✕</button></div></div>' +
       '<div class="bolus" style="display:none"><div><div class="t">Bolus agora</div><div class="v"></div></div><button data-a="ack">Feito</button></div>' +
-      '<div class="rate"><div><div class="st"></div><div class="big num"></div></div><div class="next"></div></div>' +
+      '<div class="rate"><div><div class="st"></div><div class="big num"></div><div class="dose num"></div></div><div class="next"></div></div>' +
+      '<div class="syr"><div class="sbar"><i></i></div><div class="stx"></div><div class="sbtn"><button class="ghost" data-a="refill">Trocar seringa</button><button class="ghost" data-a="hold"></button></div></div>' +
       '<div class="conc"><div><span>Cp</span><b class="cp"></b></div><div><span>Ce</span><b class="ce"></b></div><div class="t"><span class="tl"></span><b class="tg"></b></div></div>' +
       '<canvas></canvas>' +
       '<div class="legend"><span><i style="background:#f5f5f6"></i>Cp</span><span><i style="background:var(--or)"></i>Ce</span><span><i style="background:repeating-linear-gradient(90deg,#9b9ba3 0 4px,transparent 4px 7px)"></i>Alvo</span><span><i style="background:rgba(255,255,255,.18);height:8px"></i>ml/h</span></div>' +
@@ -722,6 +813,14 @@ if (typeof module !== 'undefined') module.exports = PK;
       var a = b.dataset.a, dr = D[d.key];
       if (a === 'del') { if (confirm('Remover ' + dr.name + '?')) { S.drugs = S.drugs.filter(function (x) { return x !== d; }); el.remove(); render(true); } }
       else if (a === 'edit') openSheet(d);
+      else if (a === 'refill') {
+        if (!confirm('Seringa nova de ' + (d.syr || 50) + ' ml de ' + dr.name + ' instalada agora?')) return;
+        d.refillVol = stats(d, S.now).vol; d.syrAl5 = d.syrAl0 = false; save(); toast('Seringa trocada: ' + (d.syr || 50) + ' ml'); render(false);
+      }
+      else if (a === 'hold') {
+        d.paused = !d.paused; replan(d, S.now);
+        toast(d.paused ? dr.name + ': bomba parada. Toque Retomar ao religar.' : dr.name + ': retomado' + (d.mode !== 'manual' ? ', recalculado para o alvo' : '')); render(true);
+      }
       else if (a === 'ack') { var e = d.events[+b.dataset.i]; if (e) d.ack[e.t] = 1; save(); render(false); }
       else if (a === 'minus' || a === 'plus') { d.pend = Math.max(0, +(d.pend + (a === 'plus' ? dr.step : -dr.step)).toFixed(3)); render(false); }
       else if (a === 'apply') { if (d.pend === d.target) return; d.target = d.pend; replan(d, S.now); toast('Novo alvo: ' + fx(d.target, dr.dec) + ' ' + dr.cu); render(false); }
@@ -747,15 +846,36 @@ if (typeof module !== 'undefined') module.exports = PK;
       var i = curIdx(d, t), e = d.events[i] || { mlh: 0, rate: 0 }, nx = d.events[i + 1];
       // bolus
       var bi = -1;
-      for (var k = 0; k <= i; k++) { var ek = d.events[k]; if (ek.bolus && t - ek.t < 180 && !d.ack[ek.t]) bi = k; }
+      for (var k = 0; k <= i; k++) { var ek = d.events[k]; if ((ek.bolus || ek.bolusInf) && t - ek.t < 180 + (ek.bolusInf ? ek.dur : 0) && !d.ack[ek.t]) bi = k; }
       var bx = $('.bolus', el);
-      if (bi >= 0) { var bev = d.events[bi]; bx.style.display = 'flex'; $('.v', bx).textContent = f1(bev.bolus / d.conc) + ' ml  (' + fx(bev.bolus, bev.bolus < 10 ? 1 : 0) + ' ' + dr.amt + ')'; $('button', bx).dataset.i = bi; }
+      if (bi >= 0) {
+        var bev = d.events[bi]; bx.style.display = 'flex'; $('button', bx).dataset.i = bi;
+        if (bev.bolusInf) {
+          var bmg = bev.bolusMl * d.conc, endIn = bev.t + bev.dur - t;
+          $('.t', bx).textContent = endIn > 0 ? 'Bolus pela bomba · fim em ' + fmtMS(endIn) : 'Bolus pela bomba concluído';
+          $('.v', bx).textContent = f1(bev.bolusMl) + ' ml a ' + Math.round(d.maxMlh || 1200) + ' ml/h · ' + fx(bmg, bmg < 10 ? 1 : 0) + ' ' + dr.amt;
+        } else {
+          $('.t', bx).textContent = 'Bolus agora';
+          $('.v', bx).textContent = f1(bev.bolus / d.conc) + ' ml  (' + fx(bev.bolus, bev.bolus < 10 ? 1 : 0) + ' ' + dr.amt + ')';
+        }
+      }
       else bx.style.display = 'none';
       // taxa atual
-      $('.st', el).textContent = e.pause ? (e.peak ? 'Pausa · aguardando pico de Ce' : 'Pausa · Cp acima do alvo') : (i < 0 ? 'Aguardando' : 'Taxa atual');
-      $('.big', el).innerHTML = f1(e.mlh) + '<small>ml/h</small>';
+      $('.st', el).textContent = e.hold ? 'Bomba parada (manual)' : e.pause ? (e.peak ? 'Pausa · aguardando pico de Ce' : 'Pausa · Cp acima do alvo') : e.bolusInf ? 'Bolus em curso pela bomba' : (i < 0 ? 'Aguardando' : 'Taxa atual');
+      $('.big', el).innerHTML = (e.bolusInf ? String(Math.round(d.maxMlh || 1200)) : f1(e.mlh)) + '<small>ml/h</small>';
+      $('.dose', el).textContent = e.mlh > 0 && !e.bolusInf ? '≈ ' + doseTxt(d, e.mlh) : '';
+      // seringa
+      var si = syrInfo(d, t), syr = d.syr || 50, sx = $('.syr', el);
+      var pct = Math.max(0, Math.min(1, si.rem / syr));
+      $('.sbar i', sx).style.width = (pct * 100).toFixed(1) + '%';
+      sx.classList.toggle('low', si.tte <= 600 || si.rem <= syr * 0.1);
+      sx.classList.toggle('empty', si.rem <= 0);
+      var tteTxt = !isFinite(si.tte) ? (d.paused || (e.mlh === 0 && !nx) ? 'sem consumo' : 'mais de ' + Math.max(1, Math.floor(((isFinite(d.planEnd) ? d.planEnd : t + 3600) - t) / 3600)) + ' h') : 'acaba em ' + minTxt(si.tte);
+      $('.stx', sx).innerHTML = 'Seringa ' + syr + ' ml · restam <b>' + f1(Math.max(0, si.rem)) + ' ml</b> · ' + (si.rem <= 0 ? '<b style="color:var(--bad)">VAZIA — troque</b>' : tteTxt);
+      $('[data-a=hold]', sx).textContent = d.paused ? 'Retomar bomba' : 'Pausar bomba';
+      $('[data-a=hold]', sx).classList.toggle('on', !!d.paused);
       var nxEl = $('.next', el);
-      if (nx) { var rem = nx.t - t; nxEl.className = 'next' + (rem <= 30 ? ' soon' : ''); nxEl.innerHTML = 'Próxima em <span class="cd">' + fmtMS(rem) + '</span><b>' + f1(nx.mlh) + ' ml/h</b>'; }
+      if (nx) { var rem = nx.t - t; nxEl.className = 'next' + (rem <= 30 ? ' soon' : ''); nxEl.innerHTML = 'Próxima em <span class="cd">' + fmtMS(rem) + '</span><b>' + (nx.bolusInf ? 'bolus ' + f1(nx.bolusMl) + ' ml' : nx.pause ? 'pausa' : f1(nx.mlh) + ' ml/h') + '</b>'; }
       else nxEl.innerHTML = d.mode === 'manual' ? 'Taxa fixa' : '';
       // concentrações
       var cp = d.sim.cp[Math.min(ts, d.sim.T)], ce = d.sim.ce[Math.min(ts, d.sim.T)];
@@ -781,7 +901,7 @@ if (typeof module !== 'undefined') module.exports = PK;
         var rows = '', from = Math.max(0, i - 3), to = Math.min(d.events.length, i + 14);
         for (k = from; k < to; k++) {
           var ev = d.events[k], dur = k + 1 < d.events.length ? d.events[k + 1].t - ev.t : (d.mode === 'manual' ? null : ev.dur);
-          rows += '<tr class="' + (k === i ? 'now' : k < i ? 'past' : '') + '"><td>' + fmtT(ev.t) + '</td><td>' + f1(ev.mlh) + ' ml/h' + (ev.bolus ? ' + bolus ' + f1(ev.bolus / d.conc) + ' ml' : '') + '</td><td>' + (dur ? fmtMS(dur) : '—') + '</td><td>' + (ev.pause ? 'pausa' : '') + '</td></tr>';
+          rows += '<tr class="' + (k === i ? 'now' : k < i ? 'past' : '') + '"><td>' + fmtT(ev.t) + '</td><td>' + (ev.bolusInf ? 'bolus ' + f1(ev.bolusMl) + ' ml a ' + Math.round(d.maxMlh || 1200) : f1(ev.mlh) + ' ml/h' + (ev.bolus ? ' + bolus ' + f1(ev.bolus / d.conc) + ' ml' : '')) + '</td><td>' + (dur ? fmtMS(dur) : '—') + '</td><td>' + (ev.hold ? 'parada' : ev.pause ? 'pausa' : '') + '</td></tr>';
         }
         $('tbody', details).innerHTML = rows;
       }
@@ -852,8 +972,8 @@ if (typeof module !== 'undefined') module.exports = PK;
   var A = null, editing = null;
   function openSheet(d) {
     editing = d || null;
-    if (d) A = { key: d.key, model: d.model, conc: d.conc, mode: d.mode, target: d.target, tol: d.tol, thr: d.thr, manRate: d.manRate };
-    else A = { key: 'propofol', model: 'eleveld', conc: 10, mode: 'ce', target: 3, tol: 0.08, thr: 1.2, manRate: 0 };
+    if (d) A = { key: d.key, model: d.model, conc: d.conc, mode: d.mode, target: d.target, tol: d.tol, thr: d.thr, manRate: d.manRate, syr: d.syr || 50, bolusMode: d.bolusMode || 'flash', maxMlh: d.maxMlh || 1200 };
+    else A = { key: 'propofol', model: 'eleveld', conc: 10, mode: 'ce', target: 3, tol: 0.08, thr: 1.2, manRate: 0, syr: 50, bolusMode: 'flash', maxMlh: 1200 };
     $('#addTitle').textContent = d ? 'Editar ' + D[d.key].name : 'Nova infusão';
     $('#aOk').textContent = d ? 'Aplicar a partir de agora' : 'Iniciar';
     renderSheet(true);
@@ -889,13 +1009,18 @@ if (typeof module !== 'undefined') module.exports = PK;
     $('#aThr').closest('.grp').style.display = M[A.model].ce ? 'block' : 'none';
     if (init) { $('#aRate').value = A.manRate || 0; $('#aBol').value = 0; }
     chips($('#aTol'), [[0.05, '5%'], [0.08, '8%'], [0.12, '12%'], [0.15, '15%']], A.tol, function (v) { A.tol = +v; });
+    chips($('#aSyr'), [[10, '10 ml'], [20, '20 ml'], [50, '50 ml'], [60, '60 ml']], A.syr, function (v) { A.syr = +v; });
+    $$('#aBolM button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === A.bolusMode); });
+    $('#aMaxRow').style.display = A.bolusMode === 'pump' ? 'flex' : 'none';
+    if (init) $('#aMax').value = A.maxMlh;
     var w = [];
     try { w = PK.build(A.model, S.pt).warnings; } catch (e) { w = [e.message]; }
     $('#aWarn').innerHTML = w.map(function (s) { return '<div class="warn" style="margin:0 0 10px">' + esc(s) + '</div>'; }).join('');
   }
   function confirmSheet() {
     var dr = D[A.key];
-    A.target = +$('#aTgt').value; A.thr = +$('#aThr').value;
+    A.target = +$('#aTgt').value; A.thr = +$('#aThr').value; A.maxMlh = +$('#aMax').value;
+    if (!(A.maxMlh >= 50 && A.maxMlh <= 2000)) { alert('Velocidade máxima da bomba entre 50 e 2000 ml/h.'); return; }
     if (A._custom || dr.concs.indexOf(A.conc) < 0) A.conc = +$('#aConcCustom').value;
     if (!(A.conc > 0)) { alert('Informe a concentração da seringa.'); return; }
     if (A.mode !== 'manual' && !(A.target > 0)) { alert('Informe um alvo maior que zero.'); return; }
@@ -906,7 +1031,8 @@ if (typeof module !== 'undefined') module.exports = PK;
     var d = editing;
     if (!d) { d = { id: ++S.seq, events: [], tgtHist: [], ack: {} }; S.drugs.push(d); }
     d.key = A.key; d.model = A.model; d.conc = A.conc; d.mode = A.mode; d.target = A.target; d.tol = A.tol; d.thr = A.thr || dr.thr; d.p = p;
-    d.manRate = mr || 0; d.manBol = mb || 0;
+    d.manRate = mr || 0; d.manBol = mb || 0; d.syr = A.syr; d.bolusMode = A.bolusMode; d.maxMlh = A.maxMlh; d.paused = false;
+    if (d.refillVol === undefined) d.refillVol = 0;
     replan(d, S.now); d.manBol = 0;
     if (d.el) { $('.tgt', d.el).innerHTML = tgtHTML(d); d.el.style.borderLeftColor = dr.color; }
     $('#ovAdd').classList.remove('show');
@@ -994,6 +1120,7 @@ if (typeof module !== 'undefined') module.exports = PK;
   function clock(t) { var dt = new Date(Date.now() + (t - S.now) * 1000 / S.speed); return pad(dt.getHours()) + ':' + pad(dt.getMinutes()) + (S.speed === 1 ? ':' + pad(dt.getSeconds()) : ''); }
   function evText(d, e) {
     var dr = D[d.key], s = '';
+    if (e.bolusInf) return 'Bolus pela bomba: ' + f1(e.bolusMl) + ' ml a ' + Math.round(d.maxMlh || 1200) + ' ml/h';
     if (e.bolus) s += 'Bolus ' + f1(e.bolus / d.conc) + ' ml (' + fx(e.bolus, e.bolus < 10 ? 1 : 0) + ' ' + dr.amt + ') · ';
     s += e.pause ? 'PAUSAR a bomba' : 'Ajustar para ' + f1(e.mlh) + ' ml/h';
     return s;
@@ -1018,6 +1145,19 @@ if (typeof module !== 'undefined') module.exports = PK;
           if (!document.hidden) toast(D[d.key].name + ': ' + evText(d, e));
         }
         d.alIdx = i;
+      }
+      if (S.running) {
+        var si = syrInfo(d, S.now);
+        if (si.rem > 0 && si.tte <= 300 && !d.syrAl5) {
+          d.syrAl5 = true;
+          if (live) { playSnd('alarm'); notify(D[d.key].name + ' — seringa acabando', 'Restam ' + f1(si.rem) + ' ml: acaba em ~' + Math.max(1, Math.round(si.tte / 60)) + ' min. Prepare a próxima.', 'tci-syr-' + d.id); }
+          if (!document.hidden) toast(D[d.key].name + ': seringa acaba em ~' + Math.max(1, Math.round(si.tte / 60)) + ' min');
+        }
+        if (si.rem <= 0 && !d.syrAl0) {
+          d.syrAl0 = true;
+          if (live) { playSnd('alarm'); if (navigator.vibrate) navigator.vibrate([400, 150, 400]); notify(D[d.key].name + ' — SERINGA VAZIA', 'Troque a seringa e toque "Trocar seringa" no app.', 'tci-syr-' + d.id); }
+          if (!document.hidden) toast(D[d.key].name + ': SERINGA VAZIA');
+        }
       }
       var nx = d.events[i + 1];
       if (live && nx && nx.t - S.now <= 10 && nx.t - S.now > 0 && d.preFor !== nx.t) {
@@ -1071,7 +1211,7 @@ if (typeof module !== 'undefined') module.exports = PK;
     try {
       var o = { v: 1, pt: S.pt, now: S.now, running: S.running, speed: S.speed, at: Date.now(), seq: S.seq,
         opt: { sound: $('#sound').checked, bg: $('#bg').checked, notif: $('#notif').checked, pre: $('#notifPre').checked },
-        drugs: S.drugs.map(function (d) { return { id: d.id, key: d.key, model: d.model, conc: d.conc, mode: d.mode, target: d.target, tol: d.tol, thr: d.thr, manRate: d.manRate, events: d.events, tgtHist: d.tgtHist, ack: d.ack, planEnd: isFinite(d.planEnd) ? d.planEnd : null, endX: d.endX ? Array.prototype.slice.call(d.endX) : null }; }) };
+        drugs: S.drugs.map(function (d) { return { id: d.id, key: d.key, model: d.model, conc: d.conc, mode: d.mode, target: d.target, tol: d.tol, thr: d.thr, manRate: d.manRate, syr: d.syr, refillVol: d.refillVol, bolusMode: d.bolusMode, maxMlh: d.maxMlh, paused: !!d.paused, syrAl5: !!d.syrAl5, syrAl0: !!d.syrAl0, events: d.events, tgtHist: d.tgtHist, ack: d.ack, planEnd: isFinite(d.planEnd) ? d.planEnd : null, endX: d.endX ? Array.prototype.slice.call(d.endX) : null }; }) };
       localStorage.setItem(KEY, JSON.stringify(o));
     } catch (e) {}
   }
@@ -1118,6 +1258,7 @@ if (typeof module !== 'undefined') module.exports = PK;
   $('#bAbout').onclick = function () { $('#ovAbout').classList.add('show'); };
   $$('[data-close]').forEach(function (b) { b.onclick = function () { b.closest('.ov').classList.remove('show'); }; });
   $$('.ov').forEach(function (o) { o.addEventListener('click', function (ev) { if (ev.target === o) o.classList.remove('show'); }); });
+  $('#aBolM').onclick = function (ev) { var b = ev.target.closest('button'); if (!b) return; A.maxMlh = +$('#aMax').value || A.maxMlh; A.bolusMode = b.dataset.v; renderSheet(false); };
   $('#aMode').onclick = function (ev) { var b = ev.target.closest('button'); if (!b || b.disabled) return; A.target = +$('#aTgt').value || A.target; A.mode = b.dataset.v; renderSheet(false); };
   $('#aTgt').addEventListener('input', function () { A.target = +this.value; });
   $('#aThr').addEventListener('input', function () { A.thr = +this.value; });

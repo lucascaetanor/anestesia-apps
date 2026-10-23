@@ -1,5 +1,5 @@
 // Ao atualizar o index.html, troque a versão (v1 -> v2) para o celular baixar a nova versão.
-const CACHE = 'tci-v2';
+const CACHE = 'tci-v3';
 const ARQUIVOS = [
   './', './index.html', './manifest.json',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'
