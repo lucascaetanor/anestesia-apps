@@ -55,7 +55,7 @@ header{display:flex;align-items:center;gap:12px;padding:16px 0 14px}
 .seg button.on{background:var(--or);color:#111}
 .row{display:flex;gap:8px;align-items:center;margin-top:10px}
 .chk{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13.5px;color:var(--muted)}
-.chk input{accent-color:var(--or);width:18px;height:18px}
+.chk input{accent-color:var(--or);width:18px;height:18px;flex:none}
 .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .pill{font-size:12px;color:var(--muted);background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
 .pill b{color:var(--text);font-weight:600}
@@ -200,7 +200,22 @@ footer .lc{color:var(--or);font-weight:700}
   <div id="drugs"></div>
   <div class="empty" id="empty">Nenhuma infusão. Toque em <b style="color:var(--or)">+ Adicionar infusão</b> para começar.</div>
 
-  <label class="chk" style="justify-content:center"><input type="checkbox" id="sound" checked> Alerta sonoro e vibração nas mudanças de taxa (1× real)</label>
+  <section class="card" id="alerts">
+    <h2>Alertas de troca de vazão <span class="tag">tempo 1× real</span></h2>
+    <label class="chk" style="margin-top:0"><input type="checkbox" id="sound" checked> Som na troca (e bipe curto 10 s antes)</label>
+    <label class="chk"><input type="checkbox" id="bg" checked> Continuar em segundo plano (áudio silencioso + taxa na tela de bloqueio)</label>
+    <label class="chk"><input type="checkbox" id="notif"> Notificações <span style="margin-left:auto;font-size:11.5px;color:var(--dim)" id="notifSt"></span></label>
+    <label class="chk"><input type="checkbox" id="notifPre"> Notificar também 10 s antes</label>
+    <div class="row" style="margin-top:12px">
+      <button class="ghost" id="bNotif" style="flex:1;height:40px">Permitir notificações</button>
+      <button class="ghost" id="bTest" style="flex:1;height:40px">Testar alerta</button>
+    </div>
+    <div class="row">
+      <button class="ghost" id="bIcs" style="flex:1;height:40px;color:var(--or);border-color:var(--orline)">Alarmes no Calendário (.ics)</button>
+      <select id="icsH" class="ghost" style="height:40px;background:var(--card2)"><option value="1">próx. 1 h</option><option value="2" selected>próx. 2 h</option><option value="4">próx. 4 h</option></select>
+    </div>
+    <div style="font-size:11.5px;color:var(--dim);margin-top:10px;line-height:1.5">No iPhone, abra pelo ícone da Tela de Início e toque ▶ (o toque libera o som). Com o app minimizado ou a tela bloqueada, o iOS pode suspendê-lo; o relógio continua correto ao voltar. Para garantia total com o celular bloqueado, use <b style="color:var(--muted)">Alarmes no Calendário</b>, que usa as notificações nativas do iOS (refaça se mudar o alvo).</div>
+  </section>
 
   <footer>
     Desenvolvido por <span class="lc">Dr. Lucas Caetano</span><br>
@@ -554,7 +569,7 @@ if (typeof module !== 'undefined') module.exports = PK;
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var H = 4 * 3600;
   var D = PK.DRUGS, M = PK.MODELS;
-  var S = { pt: null, now: 0, running: false, speed: 1, wall: 0, drugs: [], seq: 0, wake: null };
+  var S = { pt: null, now: 0, running: false, speed: 1, wall: 0, drugs: [], seq: 0, wake: null, tk: 0 };
 
   // ---------- util ----------
   function fmtT(s) { s = Math.max(0, Math.floor(s)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return pad(h) + ':' + pad(m) + ':' + pad(x); }
@@ -621,6 +636,8 @@ if (typeof module !== 'undefined') module.exports = PK;
     }
     d.pend = d.target;
     resim(d);
+    d.alIdx = curIdx(d, S.now); d.preFor = null;
+    save();
   }
   function resim(d) {
     var T = Math.ceil(Math.max(isFinite(d.planEnd) ? d.planEnd : 0, S.now + 3600));
@@ -649,7 +666,7 @@ if (typeof module !== 'undefined') module.exports = PK;
   }
   function resetAll() {
     S.now = 0; setRunning(false);
-    S.drugs.forEach(function (d) { d.events = []; d.tgtHist = []; d.ack = {}; d.lastIdx = -1; replan(d, 0); });
+    S.drugs.forEach(function (d) { d.events = []; d.tgtHist = []; d.ack = {}; replan(d, 0); });
     render(true);
   }
 
@@ -661,24 +678,15 @@ if (typeof module !== 'undefined') module.exports = PK;
     $('#clkState').textContent = r ? 'em execução · ' + S.speed + '×' : 'parado';
     if (r && 'wakeLock' in navigator) navigator.wakeLock.request('screen').then(function (w) { S.wake = w; }).catch(function () {});
     if (!r && S.wake) { S.wake.release().catch(function () {}); S.wake = null; }
-  }
-  var actx = null;
-  function beep() {
-    if (!$('#sound').checked) return;
-    try {
-      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-      [0, 0.18].forEach(function (off) {
-        var o = actx.createOscillator(), g = actx.createGain();
-        o.frequency.value = 880; o.connect(g); g.connect(actx.destination);
-        var t0 = actx.currentTime + off; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.14);
-        o.start(t0); o.stop(t0 + 0.15);
-      });
-    } catch (e) {}
-    if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+    keepAlive(r && $('#bg').checked);
+    S.drugs.forEach(function (d) { d.alIdx = curIdx(d, S.now); });
+    save();
   }
   function tick() {
     if (S.running) { var w = Date.now(); S.now += (w - S.wall) / 1000 * S.speed; S.wall = w; }
-    render(false);
+    if (document.hidden) { S.drugs.forEach(ensure); checkAlerts(); mediaInfo(); return; }
+    render(false); checkAlerts(); mediaInfo();
+    if (++S.tk % 20 === 0) save();
   }
 
   // ---------- render ----------
@@ -714,7 +722,7 @@ if (typeof module !== 'undefined') module.exports = PK;
       var a = b.dataset.a, dr = D[d.key];
       if (a === 'del') { if (confirm('Remover ' + dr.name + '?')) { S.drugs = S.drugs.filter(function (x) { return x !== d; }); el.remove(); render(true); } }
       else if (a === 'edit') openSheet(d);
-      else if (a === 'ack') { var e = d.events[+b.dataset.i]; if (e) d.ack[e.t] = 1; render(false); }
+      else if (a === 'ack') { var e = d.events[+b.dataset.i]; if (e) d.ack[e.t] = 1; save(); render(false); }
       else if (a === 'minus' || a === 'plus') { d.pend = Math.max(0, +(d.pend + (a === 'plus' ? dr.step : -dr.step)).toFixed(3)); render(false); }
       else if (a === 'apply') { if (d.pend === d.target) return; d.target = d.pend; replan(d, S.now); toast('Novo alvo: ' + fx(d.target, dr.dec) + ' ' + dr.cu); render(false); }
       else if (a === 'man') {
@@ -737,8 +745,6 @@ if (typeof module !== 'undefined') module.exports = PK;
       $('.nm', el).textContent = dr.name;
       $('.sub', el).textContent = mo.name + ' · ' + fx(d.conc, d.conc < 10 ? 1 : 0) + ' ' + dr.concU + ' · ' + modeTxt + (d.mode !== 'manual' ? ' · tol. ' + Math.round(d.tol * 100) + '%' : '');
       var i = curIdx(d, t), e = d.events[i] || { mlh: 0, rate: 0 }, nx = d.events[i + 1];
-      if (S.running && S.speed === 1 && d.lastIdx !== undefined && d.lastIdx >= 0 && i !== d.lastIdx) beep();
-      d.lastIdx = i;
       // bolus
       var bi = -1;
       for (var k = 0; k <= i; k++) { var ek = d.events[k]; if (ek.bolus && t - ek.t < 180 && !d.ack[ek.t]) bi = k; }
@@ -898,7 +904,7 @@ if (typeof module !== 'undefined') module.exports = PK;
     var p;
     try { p = PK.build(A.model, S.pt); } catch (e) { alert(e.message); return; }
     var d = editing;
-    if (!d) { d = { id: ++S.seq, events: [], tgtHist: [], ack: {}, lastIdx: -1 }; S.drugs.push(d); }
+    if (!d) { d = { id: ++S.seq, events: [], tgtHist: [], ack: {} }; S.drugs.push(d); }
     d.key = A.key; d.model = A.model; d.conc = A.conc; d.mode = A.mode; d.target = A.target; d.tol = A.tol; d.thr = A.thr || dr.thr; d.p = p;
     d.manRate = mr || 0; d.manBol = mb || 0;
     replan(d, S.now); d.manBol = 0;
@@ -922,6 +928,178 @@ if (typeof module !== 'undefined') module.exports = PK;
       '<p style="color:var(--muted)">Covariáveis: massa magra de James (Schnider, Minto) — paradoxal em obesos; massa livre de gordura de Al-Sallami (Eleveld). Concentrações de propofol em mcg/ml; opioides e dexmedetomidina em ng/ml.</p>';
   }
 
+
+  // ---------- alertas: som, notificação, segundo plano, calendário ----------
+  var KEY = 'simtci-sessao-v1';
+  function wavURL(parts, sr) {
+    // parts: [[freq, dur, amp], ...] (freq 0 = silêncio)
+    var n = 0; parts.forEach(function (p) { n += Math.round(p[1] * sr); });
+    var buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf), o = 44;
+    function str(off, s) { for (var i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); }
+    str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, n * 2, true);
+    parts.forEach(function (p) {
+      var m = Math.round(p[1] * sr), att = Math.min(400, m / 4);
+      for (var i = 0; i < m; i++) {
+        var env = Math.min(1, i / att, (m - i) / att);
+        var s = p[0] ? Math.sin(2 * Math.PI * p[0] * i / sr) * p[2] * env : 0;
+        v.setInt16(o, Math.max(-1, Math.min(1, s)) * 32767, true); o += 2;
+      }
+    });
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+  var SR = 22050;
+  var snd = {
+    alarm: new Audio(wavURL([[784, .16, .7], [0, .05], [988, .16, .7], [0, .05], [1319, .30, .7], [0, .25], [784, .16, .7], [0, .05], [988, .16, .7], [0, .05], [1319, .30, .7]], SR)),
+    pre: new Audio(wavURL([[1047, .09, .35], [0, .12], [1047, .09, .35]], SR)),
+    keep: new Audio(wavURL([[0, 2]], 8000))
+  };
+  snd.keep.loop = true;
+  Object.keys(snd).forEach(function (k) { snd[k].setAttribute('playsinline', ''); snd[k].preload = 'auto'; });
+  var unlocked = false;
+  function unlockAudio() {
+    if (unlocked) return; unlocked = true;
+    ['alarm', 'pre'].forEach(function (k) {
+      var el = snd[k]; el.muted = true;
+      var pr = el.play(); if (pr && pr.then) pr.then(function () { el.pause(); el.currentTime = 0; el.muted = false; }).catch(function () { el.muted = false; unlocked = false; });
+      else el.muted = false;
+    });
+  }
+  function playSnd(k) {
+    if (!$('#sound').checked) return;
+    try { var el = snd[k]; el.currentTime = 0; var pr = el.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
+  }
+  function keepAlive(on) {
+    try {
+      if (on) { var pr = snd.keep.play(); if (pr && pr.catch) pr.catch(function () {}); }
+      else snd.keep.pause();
+    } catch (e) {}
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = on ? 'playing' : 'none';
+      try {
+        navigator.mediaSession.setActionHandler('play', function () { snd.keep.play(); });
+        navigator.mediaSession.setActionHandler('pause', function () { snd.keep.play(); toast('Use o botão do app para pausar o tempo.'); });
+      } catch (e) {}
+    }
+  }
+  var lastMedia = '';
+  function mediaInfo() {
+    if (!('mediaSession' in navigator) || !S.running || !S.drugs.length || typeof MediaMetadata === 'undefined') return;
+    var d = S.drugs[0], i = curIdx(d, S.now), e = d.events[i] || { mlh: 0 }, nx = d.events[i + 1];
+    var title = D[d.key].name + ' ' + f1(e.mlh) + ' ml/h' + (S.drugs.length > 1 ? ' · ' + S.drugs.slice(1).map(function (x) { var j = curIdx(x, S.now); return D[x.key].name.slice(0, 5) + ' ' + f1((x.events[j] || { mlh: 0 }).mlh); }).join(' · ') : '');
+    var art = nx ? 'Próxima: ' + f1(nx.mlh) + ' ml/h às ' + clock(nx.t) : 'SIM TCI';
+    var k = title + art; if (k === lastMedia) return; lastMedia = k;
+    navigator.mediaSession.metadata = new MediaMetadata({ title: title, artist: art, album: 'SIM TCI · ' + fmtT(S.now), artwork: [{ src: 'icon-512.png', sizes: '512x512', type: 'image/png' }] });
+  }
+  function clock(t) { var dt = new Date(Date.now() + (t - S.now) * 1000 / S.speed); return pad(dt.getHours()) + ':' + pad(dt.getMinutes()) + (S.speed === 1 ? ':' + pad(dt.getSeconds()) : ''); }
+  function evText(d, e) {
+    var dr = D[d.key], s = '';
+    if (e.bolus) s += 'Bolus ' + f1(e.bolus / d.conc) + ' ml (' + fx(e.bolus, e.bolus < 10 ? 1 : 0) + ' ' + dr.amt + ') · ';
+    s += e.pause ? 'PAUSAR a bomba' : 'Ajustar para ' + f1(e.mlh) + ' ml/h';
+    return s;
+  }
+  function notify(title, body, tag) {
+    if (!$('#notif').checked || !('Notification' in window) || Notification.permission !== 'granted') return;
+    var o = { body: body, tag: tag, renotify: true, icon: 'icon-192.png', badge: 'icon-192.png', vibrate: [200, 100, 200], silent: false };
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(function (r) { return r.showNotification(title, o); }).catch(function () { try { new Notification(title, o); } catch (e) {} });
+    else try { new Notification(title, o); } catch (e) {}
+  }
+  function checkAlerts() {
+    var live = S.running && S.speed === 1;
+    S.drugs.forEach(function (d) {
+      var i = curIdx(d, S.now);
+      if (d.alIdx === undefined) { d.alIdx = i; return; }
+      if (i !== d.alIdx) {
+        var e = d.events[i];
+        if (live && e && S.now - e.t < 180) {
+          playSnd('alarm');
+          if (navigator.vibrate) navigator.vibrate([250, 120, 250, 120, 250]);
+          notify(D[d.key].name + ' — trocar vazão', evText(d, e), 'tci-' + d.id);
+          if (!document.hidden) toast(D[d.key].name + ': ' + evText(d, e));
+        }
+        d.alIdx = i;
+      }
+      var nx = d.events[i + 1];
+      if (live && nx && nx.t - S.now <= 10 && nx.t - S.now > 0 && d.preFor !== nx.t) {
+        d.preFor = nx.t; playSnd('pre');
+        if ($('#notifPre').checked) notify(D[d.key].name + ' — troca em 10 s', evText(d, nx), 'tci-pre-' + d.id);
+      }
+    });
+  }
+  function askNotif() {
+    if (!('Notification' in window)) {
+      alert('Este navegador não oferece notificações. No iPhone, elas só funcionam com o app instalado na Tela de Início (iOS 16.4 ou superior).');
+      $('#notif').checked = false; return;
+    }
+    Notification.requestPermission().then(function (p) {
+      $('#notif').checked = p === 'granted'; notifState();
+      if (p === 'granted') notify('SIM TCI', 'Notificações ativadas. Você será avisado a cada troca de vazão.', 'tci-teste');
+      else alert('Permissão negada. Ative em Ajustes › Notificações › SIM TCI.');
+      save();
+    });
+  }
+  function notifState() {
+    var el = $('#notifSt'); if (!el) return;
+    if (!('Notification' in window)) { el.textContent = 'indisponível neste navegador'; return; }
+    el.textContent = Notification.permission === 'granted' ? 'permitidas' : Notification.permission === 'denied' ? 'bloqueadas nos Ajustes' : 'ainda não permitidas';
+  }
+  // ---- exportar alarmes para o Calendário (.ics) ----
+  function icsDate(ms) { var d = new Date(ms); return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z'; }
+  function exportICS() {
+    if (!S.running || S.speed !== 1) { alert('Inicie o tempo em 1× real antes de exportar: os alarmes usam o horário real do relógio.'); return; }
+    var now = Date.now(), lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SIM TCI//Lucas Caetano//PT', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'], n = 0, hor = +$('#icsH').value * 3600;
+    S.drugs.forEach(function (d) {
+      d.events.forEach(function (e) {
+        if (e.t <= S.now || e.t > S.now + hor || n >= 80) return;
+        var ms = now + (e.t - S.now) * 1000, txt = evText(d, e).replace(/[,;]/g, function (c) { return '\\' + c; });
+        n++;
+        lines.push('BEGIN:VEVENT', 'UID:simtci-' + d.id + '-' + e.t + '-' + now + '@simtci', 'DTSTAMP:' + icsDate(now), 'DTSTART:' + icsDate(ms), 'DTEND:' + icsDate(ms + 60000),
+          'SUMMARY:' + D[d.key].name + ' → ' + (e.pause ? 'pausar' : f1(e.mlh) + ' ml/h'), 'DESCRIPTION:' + txt,
+          'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + txt, 'TRIGGER:PT0S', 'END:VALARM', 'END:VEVENT');
+      });
+    });
+    lines.push('END:VCALENDAR');
+    if (!n) { alert('Não há trocas de vazão programadas no período escolhido.'); return; }
+    var ics = lines.join('\r\n'), name = 'alarmes-sim-tci.ics';
+    var file = typeof File !== 'undefined' ? new File([ics], name, { type: 'text/calendar' }) : null;
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: 'Alarmes SIM TCI' }).catch(function () {}); }
+    else { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+    toast(n + ' alarmes gerados');
+  }
+  // ---- sessão: continua de onde parou mesmo se o iOS fechar o app ----
+  function save() {
+    try {
+      var o = { v: 1, pt: S.pt, now: S.now, running: S.running, speed: S.speed, at: Date.now(), seq: S.seq,
+        opt: { sound: $('#sound').checked, bg: $('#bg').checked, notif: $('#notif').checked, pre: $('#notifPre').checked },
+        drugs: S.drugs.map(function (d) { return { id: d.id, key: d.key, model: d.model, conc: d.conc, mode: d.mode, target: d.target, tol: d.tol, thr: d.thr, manRate: d.manRate, events: d.events, tgtHist: d.tgtHist, ack: d.ack, planEnd: isFinite(d.planEnd) ? d.planEnd : null, endX: d.endX ? Array.prototype.slice.call(d.endX) : null }; }) };
+      localStorage.setItem(KEY, JSON.stringify(o));
+    } catch (e) {}
+  }
+  function restore() {
+    var o; try { o = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { o = null; }
+    if (!o || o.v !== 1 || !o.pt) return false;
+    if (o.opt) { $('#sound').checked = o.opt.sound; $('#bg').checked = o.opt.bg; $('#notif').checked = o.opt.notif && 'Notification' in window && Notification.permission === 'granted'; $('#notifPre').checked = !!o.opt.pre; }
+    if (!o.drugs || !o.drugs.length) { setPtInputs(o.pt); S.pt = o.pt; return false; }
+    try {
+      setPtInputs(o.pt); S.pt = o.pt; S.seq = o.seq || 0; S.speed = o.speed || 1;
+      S.now = o.now + (o.running ? (Date.now() - o.at) / 1000 * S.speed : 0);
+      S.drugs = o.drugs.map(function (x) {
+        var d = x; d.p = PK.build(d.model, S.pt); d.planEnd = x.planEnd === null ? Infinity : x.planEnd; d.endX = x.endX ? Float64Array.from(x.endX) : null;
+        d.ack = x.ack || {}; d.pend = d.target; resim(d); ensure(d); d.alIdx = curIdx(d, S.now); return d;
+      });
+      $$('#speeds button').forEach(function (b) { b.classList.toggle('on', +b.dataset.s === S.speed); });
+      if (o.running) { S.wall = Date.now(); S.running = true; $('#cPlay').textContent = '❚❚'; $('#time').classList.add('run'); $('#clkState').textContent = 'em execução · ' + S.speed + '× · toque ▶ p/ reativar som'; S.needTap = true; }
+      return true;
+    } catch (e) { S.drugs = []; return false; }
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) save();
+    else if (S.running) { tick(); S.drugs.forEach(function (d) { d.alIdx = curIdx(d, S.now); }); }
+  });
+  window.addEventListener('pagehide', save);
+  // primeiro toque após restaurar: reativa áudio/segundo plano
+  document.addEventListener('click', function () { if (S.needTap) { S.needTap = false; unlockAudio(); keepAlive(S.running && $('#bg').checked); $('#clkState').textContent = S.running ? 'em execução · ' + S.speed + '×' : 'parado'; } }, true);
+
   // ---------- eventos ----------
   ['#age', '#wt', '#ht'].forEach(function (s) { $(s).addEventListener('input', renderPtMeta); $(s).addEventListener('change', function () { applyPt(false); }); });
   $('#opioid').addEventListener('change', function () { if (!applyPt(false)) $('#opioid').checked = S.pt.opioid; });
@@ -930,12 +1108,12 @@ if (typeof module !== 'undefined') module.exports = PK;
     var prev = $('#sex .on'); $$('#sex button').forEach(function (x) { x.classList.toggle('on', x === b); });
     if (!applyPt(false)) { $$('#sex button').forEach(function (x) { x.classList.toggle('on', x === prev); }); renderPtMeta(); }
   });
-  $('#cPlay').onclick = function () { if (!S.drugs.length) { toast('Adicione uma infusão primeiro.'); return; } setRunning(!S.running); };
-  $$('.ctrls [data-j]').forEach(function (b) { b.onclick = function () { S.now = Math.max(0, S.now + +b.dataset.j); S.wall = Date.now(); S.drugs.forEach(function (d) { d.lastIdx = -1; }); render(true); }; });
+  $('#cPlay').onclick = function () { if (!S.drugs.length) { toast('Adicione uma infusão primeiro.'); return; } unlockAudio(); setRunning(!S.running); };
+  $$('.ctrls [data-j]').forEach(function (b) { b.onclick = function () { S.now = Math.max(0, S.now + +b.dataset.j); S.wall = Date.now(); S.drugs.forEach(function (d) { d.alIdx = curIdx(d, S.now); d.preFor = null; }); save(); render(true); }; });
   $('#cReset').onclick = function () { if (!S.drugs.length) { S.now = 0; render(true); return; } if (confirm('Reiniciar a simulação do zero com os alvos atuais?')) resetAll(); };
   $('#speeds').onclick = function (ev) { var b = ev.target.closest('button'); if (!b) return; S.speed = +b.dataset.s; $$('#speeds button').forEach(function (x) { x.classList.toggle('on', x === b); }); setRunning(S.running); };
   $('#bAdd').onclick = function () { if (!applyPtIfNeeded()) return; openSheet(null); };
-  $('#bClear').onclick = function () { if (S.drugs.length && confirm('Remover todas as infusões e zerar o tempo?')) { S.drugs = []; $('#drugs').innerHTML = ''; S.now = 0; setRunning(false); render(true); } };
+  $('#bClear').onclick = function () { if (S.drugs.length && confirm('Remover todas as infusões e zerar o tempo?')) { S.drugs = []; $('#drugs').innerHTML = ''; S.now = 0; setRunning(false); try { localStorage.removeItem(KEY); } catch (e) {} render(true); } };
   $('#bDoc').onclick = function () { doc(); $('#ovDoc').classList.add('show'); };
   $('#bAbout').onclick = function () { $('#ovAbout').classList.add('show'); };
   $$('[data-close]').forEach(function (b) { b.onclick = function () { b.closest('.ov').classList.remove('show'); }; });
@@ -956,7 +1134,15 @@ if (typeof module !== 'undefined') module.exports = PK;
     return true;
   }
 
-  S.pt = readPt(); renderPtMeta(); render(true);
+  $('#notif').addEventListener('change', function () { if (this.checked && (!('Notification' in window) || Notification.permission !== 'granted')) { this.checked = false; askNotif(); } save(); });
+  $('#bNotif').onclick = askNotif;
+  $('#bTest').onclick = function () { unlockAudio(); playSnd('alarm'); if (navigator.vibrate) navigator.vibrate([250, 120, 250]); notify('SIM TCI — teste', 'Assim chega o aviso de troca de vazão.', 'tci-teste'); };
+  $('#bIcs').onclick = exportICS;
+  ['#sound', '#bg', '#notifPre'].forEach(function (s) { $(s).addEventListener('change', function () { if (s === '#bg') keepAlive(S.running && this.checked); save(); }); });
+  S.pt = readPt();
+  var restored = restore();
+  renderPtMeta(); notifState(); render(true);
+  if (restored) toast('Sessão restaurada · ' + fmtT(S.now));
   setInterval(tick, 250);
   window.__SIM = S; // para testes
 })();
