@@ -4,36 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0a0e1a">
+<meta name="theme-color" content="#0a0a0b">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Anest Pediátrica">
-<title>Simulador de Anestesia Pediátrica</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-title" content="SIM PED">
+<title>SIM PED — Simulador de Anestesia Pediátrica</title>
 <style>
   :root {
-    --bg: #0a0e1a;
-    --surface: #111827;
-    --surface2: #1a2235;
-    --surface3: #1f2d44;
-    --accent: #00d4ff;
-    --accent2: #00ff9d;
-    --warn: #ff6b35;
-    --danger: #ff3b3b;
-    --text: #e8f0fe;
-    --muted: #6b7fa3;
-    --border: rgba(0,212,255,0.15);
-    --glow: 0 0 20px rgba(0,212,255,0.2);
-    --glow2: 0 0 20px rgba(0,255,157,0.2);
+    --bg: #0a0a0b;
+    --surface: #141416;
+    --surface2: #1c1c1f;
+    --surface3: #26262a;
+    --accent: #ff7a1a;
+    --accent2: #ff9c52;
+    --warn: #ffcc66;
+    --danger: #ff5a5a;
+    --text: #f5f5f6;
+    --muted: #9b9ba3;
+    --border: #2a2a2f;
+    --glow: 0 0 20px rgba(255,122,26,0.18);
+    --glow2: 0 0 20px rgba(255,156,82,0.15);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: 'Sora', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -42,7 +41,7 @@
 
   /* HEADER */
   .hero {
-    background: linear-gradient(135deg, #0a0e1a 0%, #0d1b2e 50%, #0a1628 100%);
+    background: linear-gradient(135deg, #0a0a0b 0%, #141416 50%, #0a0a0b 100%);
     border-bottom: 1px solid var(--border);
     padding: 40px 24px 32px;
     position: relative;
@@ -53,7 +52,7 @@
     position: absolute;
     top: -60px; left: -60px;
     width: 300px; height: 300px;
-    background: radial-gradient(circle, rgba(0,212,255,0.07) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255,122,26,0.07) 0%, transparent 70%);
     pointer-events: none;
   }
   .hero::after {
@@ -61,13 +60,13 @@
     position: absolute;
     bottom: -80px; right: 40px;
     width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(0,255,157,0.05) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(245,245,246,0.05) 0%, transparent 70%);
     pointer-events: none;
   }
   .hero-inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
   .badge {
     display: inline-block;
-    font-family: 'DM Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 10px;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -81,7 +80,7 @@
     font-size: clamp(24px, 4vw, 42px);
     font-weight: 800;
     line-height: 1.15;
-    background: linear-gradient(135deg, #ffffff 0%, var(--accent) 60%, var(--accent2) 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #ffffff 55%, var(--accent) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -127,7 +126,7 @@
   .axis-card.eixo3::before { background: linear-gradient(90deg, var(--accent2), transparent); }
 
   .axis-num {
-    font-family: 'Space Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 11px;
     color: var(--muted);
     letter-spacing: 1px;
@@ -198,7 +197,7 @@
     text-transform: uppercase;
     color: var(--muted);
     margin-bottom: 6px;
-    font-family: 'DM Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
   }
   .input-group input, .input-group select {
     width: 100%;
@@ -208,7 +207,7 @@
     padding: 10px 12px;
     color: var(--text);
     font-size: 15px;
-    font-family: 'Sora', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-weight: 600;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -216,18 +215,18 @@
   }
   .input-group input:focus, .input-group select:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+    box-shadow: 0 0 0 3px rgba(255,122,26,0.1);
   }
   .input-group select option { background: var(--surface2); }
 
   .calc-btn {
     width: 100%;
     padding: 14px;
-    background: linear-gradient(135deg, var(--accent), #0099cc);
+    background: linear-gradient(135deg, var(--accent), #e0650f);
     border: none;
     border-radius: 10px;
     color: #000;
-    font-family: 'Sora', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
@@ -235,7 +234,7 @@
     transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
     margin-bottom: 32px;
   }
-  .calc-btn:hover { opacity: 0.9; box-shadow: 0 0 24px rgba(0,212,255,0.4); }
+  .calc-btn:hover { opacity: 0.9; box-shadow: 0 0 24px rgba(255,122,26,0.4); }
   .calc-btn:active { transform: scale(0.99); }
 
   /* FISIOLOGIA */
@@ -247,7 +246,7 @@
   }
   .physio-card {
     background: var(--surface);
-    border: 1px solid rgba(255,107,53,0.2);
+    border: 1px solid rgba(255,204,102,0.2);
     border-radius: 10px;
     padding: 16px;
     display: flex;
@@ -281,7 +280,7 @@
     position: relative;
   }
   .result-card-title {
-    font-family: 'DM Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 10px;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -303,7 +302,7 @@
   .result-row:last-child { border-bottom: none; }
   .result-label { font-size: 12px; color: var(--muted); }
   .result-value {
-    font-family: 'Space Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 13px;
     font-weight: 700;
     color: var(--text);
@@ -315,14 +314,14 @@
 
   /* ALERTS */
   .alerts-panel {
-    background: rgba(255,59,59,0.06);
-    border: 1px solid rgba(255,59,59,0.3);
+    background: rgba(255,90,90,0.06);
+    border: 1px solid rgba(255,90,90,0.3);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 24px;
   }
   .alerts-title {
-    font-family: 'DM Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 11px;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -337,7 +336,7 @@
     align-items: flex-start;
     gap: 10px;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(255,59,59,0.1);
+    border-bottom: 1px solid rgba(255,90,90,0.1);
     font-size: 13px;
     color: #ffaaaa;
   }
@@ -373,7 +372,7 @@
     background-clip: text;
   }
   .ficha-header small {
-    font-family: 'DM Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 11px;
     color: var(--muted);
   }
@@ -387,7 +386,7 @@
   .ficha-key {
     background: var(--surface2);
     padding: 12px 16px;
-    font-family: 'DM Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 10px;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -405,7 +404,7 @@
   }
   .ficha-val strong {
     color: var(--accent2);
-    font-family: 'Space Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
   }
 
   /* VENTILATION VISUAL */
@@ -423,7 +422,7 @@
     flex: 1;
     min-width: 120px;
   }
-  .vent-bar-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-family: 'DM Mono', monospace; }
+  .vent-bar-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace; }
   .vent-bar {
     height: 8px;
     background: var(--surface3);
@@ -437,7 +436,7 @@
     transition: width 0.5s ease;
   }
   .vent-val {
-    font-family: 'Space Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 12px;
     color: var(--accent);
     margin-top: 2px;
@@ -460,7 +459,7 @@
     text-align: center;
   }
   .fluid-step-num {
-    font-family: 'Space Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 18px;
     font-weight: 700;
     color: var(--accent);
@@ -478,7 +477,7 @@
     background: var(--surface2);
     padding: 10px 12px;
     text-align: left;
-    font-family: 'DM Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 10px;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -493,7 +492,7 @@
   .drug-table tr:last-child td { border-bottom: none; }
   .drug-table td:first-child { color: var(--text); font-weight: 600; }
   .drug-table td:not(:first-child) {
-    font-family: 'Space Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     color: var(--accent2);
   }
   .drug-table tr:hover td { background: rgba(255,255,255,0.02); }
@@ -502,65 +501,6 @@
   .hidden { display: none; }
 
   /* GATE DE SENHA */
-  .gate-overlay {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 1000;
-    padding: 24px;
-  }
-  .gate-box {
-    max-width: 380px;
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 36px 28px;
-    text-align: center;
-    box-shadow: var(--glow);
-  }
-  .gate-icon { font-size: 40px; margin-bottom: 12px; }
-  .gate-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
-  .gate-box p { font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
-  .gate-box input {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    color: var(--text);
-    font-size: 15px;
-    font-family: 'Sora', sans-serif;
-    text-align: center;
-    letter-spacing: 2px;
-    outline: none;
-    margin-bottom: 14px;
-  }
-  .gate-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
-  .gate-box button {
-    width: 100%;
-    padding: 12px;
-    background: linear-gradient(135deg, var(--accent), #0099cc);
-    border: none;
-    border-radius: 10px;
-    color: #000;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-  }
-  .gate-box button:hover { opacity: 0.9; }
-  .gate-error {
-    display: none;
-    margin-top: 12px;
-    font-size: 12px;
-    color: var(--danger);
-  }
-  .gate-loading {
-    margin-top: 12px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-
   /* ===== CARTÃO DE IMPRESSÃO / PDF — 1 página A4, tema claro ===== */
   .print-card {
     position: fixed;
@@ -568,8 +508,8 @@
     top: 0;
     width: 210mm;
     background: #ffffff;
-    color: #1a2534;
-    font-family: 'Sora', Arial, sans-serif;
+    color: #1c1c1f;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     padding: 9mm 10mm;
     box-sizing: border-box;
   }
@@ -577,20 +517,20 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    border-bottom: 3px solid #102033;
+    border-bottom: 3px solid #1c1c1f;
     padding-bottom: 3mm;
     margin-bottom: 3mm;
   }
-  .pc-title { font-size: 19px; font-weight: 800; color: #102033; letter-spacing: -0.2px; }
+  .pc-title { font-size: 19px; font-weight: 800; color: #1c1c1f; letter-spacing: -0.2px; }
   .pc-subtitle { font-size: 9px; color: #7a8794; margin-top: 1px; }
   .pc-meta {
-    font-family: 'Space Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-size: 11px;
-    color: #1a2534;
+    color: #1c1c1f;
     text-align: right;
     line-height: 1.5;
   }
-  .pc-meta b { color: #0c7fa8; }
+  .pc-meta b { color: #d9600a; }
   .pc-alerts {
     background: #fff1ee;
     border: 1.5px solid #e0503a;
@@ -609,7 +549,7 @@
   }
   .pc-cell {
     border: 1px solid #dfe7ef;
-    border-left: 4px solid var(--pc-c, #2d9cdb);
+    border-left: 4px solid var(--pc-c, #ff7a1a);
     border-radius: 6px;
     background: #fbfdff;
     padding: 5px 7px 6px;
@@ -617,7 +557,7 @@
   .pc-cell-title {
     font-size: 10.5px;
     font-weight: 800;
-    color: #102033;
+    color: #1c1c1f;
     margin-bottom: 3px;
     display: flex;
     align-items: center;
@@ -627,12 +567,12 @@
   .pc-cell li {
     font-size: 9px;
     line-height: 1.55;
-    color: #33465a;
+    color: #45454b;
     padding: 0.5px 0;
   }
   .pc-cell li b {
-    color: var(--pc-c, #0c7fa8);
-    font-family: 'Space Mono', monospace;
+    color: var(--pc-c, #d9600a);
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     font-weight: 700;
   }
   .pc-cell li .pc-warn { color: #c23b1f; font-weight: 700; }
@@ -666,7 +606,7 @@
     font-size: 12px;
     border-top: 1px solid var(--border);
     margin-top: 40px;
-    font-family: 'DM Mono', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
     letter-spacing: 0.5px;
   }
   footer a { color: var(--accent); text-decoration: none; }
@@ -689,7 +629,7 @@
     border: none;
     border-radius: 7px;
     color: var(--muted);
-    font-family: 'Sora', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -699,15 +639,15 @@
   .tab-btn.active {
     background: var(--surface2);
     color: var(--accent);
-    box-shadow: inset 0 1px 0 rgba(0,212,255,0.2);
+    box-shadow: inset 0 1px 0 rgba(255,122,26,0.2);
   }
   .tab-content { display: none; }
   .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
 
   /* HIGHLIGHT BOX */
   .highlight-box {
-    background: rgba(0,212,255,0.05);
-    border: 1px solid rgba(0,212,255,0.2);
+    background: rgba(255,122,26,0.05);
+    border: 1px solid rgba(255,122,26,0.2);
     border-radius: 10px;
     padding: 16px;
     margin-bottom: 16px;
@@ -727,7 +667,7 @@
     border-radius: 8px;
     padding: 10px 18px;
     color: var(--text);
-    font-family: 'Sora', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -744,96 +684,403 @@
     .results-panel { display: block !important; }
     .ficha-card, .result-card, .alerts-panel { border: 1px solid #ccc; }
   }
+  /* LOGO HEADER (SIM PED) */
+  .hero-inner { display: flex; align-items: center; gap: 22px; }
+  .hero-logo { width: 104px; height: 104px; border-radius: 24px; flex-shrink: 0; box-shadow: 0 8px 28px rgba(0,0,0,0.5), 0 0 0 1px #2a2a2f; }
+  .hero-sign { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+  .hero-sign b { color: var(--accent); font-weight: 600; }
+  @media (max-width: 560px) {
+    .hero { padding: 24px 16px 22px; }
+    .hero-inner { gap: 14px; }
+    .hero-logo { width: 72px; height: 72px; border-radius: 17px; }
+    .container { padding: 24px 16px; }
+  }
 </style>
 </head>
 <body>
 
-<!-- GATE DE SENHA -->
-<div id="gate" class="gate-overlay">
-  <div class="gate-box">
-    <div class="gate-icon">🔒</div>
-    <h2>Simulador de Anestesia Pediátrica</h2>
-    <p>Conteúdo protegido por senha. Insira a senha de acesso para continuar.</p>
-    <input type="password" id="gatePassword" placeholder="Senha" autocomplete="off">
-    <button id="gateBtn">Entrar</button>
-    <div id="gateError" class="gate-error">Senha incorreta. Tente novamente.</div>
-    <div id="gateLoading" class="gate-loading" style="display:none;">Verificando...</div>
+
+<!-- HEADER -->
+<div class="hero">
+  <div class="hero-inner">
+    <img class="hero-logo" src="logo.png" alt="SIM PED">
+    <div>
+      <div class="badge">Ferramenta Clínica Pediátrica</div>
+      <h1>Simulador de Anestesia Pediátrica</h1>
+      <p>Planejamento anestésico automático baseado em idade, peso, via aérea e tipo de cirurgia</p>
+      <div class="hero-sign">Powered by <b>Lucas Caetano</b></div>
+    </div>
   </div>
 </div>
 
-<div id="appRoot" style="display:none;"></div>
+<div class="container">
 
-<script>
-// ---- Conteudo protegido por criptografia AES-256-GCM (Web Crypto API) ----
-// A senha nunca fica salva no arquivo: ela e usada apenas para derivar a chave (PBKDF2)
-// que tenta decifrar o blob abaixo. Sem a senha correta, o conteudo nao pode ser lido.
-const __ENC_SALT = "SejCqLVXfxpb30BUcuBexw==";
-const __ENC_IV = "xYndf+RFpXhoR7U1";
-const __ENC_DATA = "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";
-const __ENC_ITER = 250000;
+  <!-- EIXOS CONCEITUAIS -->
+  <div class="section-header" style="margin-top:8px;">
+    <div class="icon" style="background:rgba(255,122,26,0.1);">🎯</div>
+    <div>
+      <h2>Três Eixos do Plano Anestésico</h2>
+      <small>A integração destes eixos determina a estratégia ideal</small>
+    </div>
+  </div>
+  <div class="axes-grid">
+    <div class="axis-card eixo1">
+      <div class="axis-num">EIXO 01 — PACIENTE</div>
+      <div class="axis-title">👶 Dados do Paciente</div>
+      <ul class="axis-items">
+        <li>Idade e peso</li>
+        <li>Prematuridade</li>
+        <li>Classificação ASA</li>
+        <li>Altura</li>
+      </ul>
+    </div>
+    <div class="axis-card eixo2">
+      <div class="axis-num">EIXO 02 — PROCEDIMENTO</div>
+      <div class="axis-title">🔧 Tipo de Cirurgia</div>
+      <ul class="axis-items">
+        <li>Duração: curto / médio / longo</li>
+        <li>Nível nociceptivo</li>
+        <li>Urgência / eletivo</li>
+        <li>Posição cirúrgica</li>
+      </ul>
+    </div>
+    <div class="axis-card eixo3">
+      <div class="axis-num">EIXO 03 — ESTRATÉGIA</div>
+      <div class="axis-title">💡 Abordagem Anestésica</div>
+      <ul class="axis-items">
+        <li>Via aérea: MF / ML / IOT</li>
+        <li>Ventilação: espontânea / controlada</li>
+        <li>Técnica: inalatória / TIVA</li>
+        <li>Analgesia multimodal</li>
+      </ul>
+    </div>
+  </div>
 
-function __b64ToBuf(b64) {
-  const bin = atob(b64);
-  const buf = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-  return buf;
-}
+  <!-- FISIOLOGIA -->
+  <div class="physio-section">
+    <div class="section-header">
+      <div class="icon" style="background:rgba(255,204,102,0.1);">🔬</div>
+      <div>
+        <h2 style="color:var(--warn);">Por que crianças não são adultos pequenos?</h2>
+        <small>Diferenças fisiológicas críticas que impactam o manejo anestésico</small>
+      </div>
+    </div>
+    <div class="physio-grid">
+      <div class="physio-card">
+        <div class="physio-icon">🫁</div>
+        <div class="physio-text"><strong>↑ Consumo de O₂</strong>Crianças consomem 6–8 ml/kg/min vs 3–4 ml/kg/min no adulto. Apneia = hipoxemia rápida.</div>
+      </div>
+      <div class="physio-card">
+        <div class="physio-icon">📉</div>
+        <div class="physio-text"><strong>↓ Reserva Funcional</strong>CFR relativa reduzida. Menor tempo de dessaturação em apneia.</div>
+      </div>
+      <div class="physio-card">
+        <div class="physio-icon">❤️</div>
+        <div class="physio-text"><strong>Débito cardíaco FC-dependente</strong>Bradicardia = emergência. Frequência cardíaca é o principal determinante do DC.</div>
+      </div>
+      <div class="physio-card">
+        <div class="physio-icon">🧪</div>
+        <div class="physio-text"><strong>Imaturidade hepática/renal</strong>Metabolismo e excreção alterados. Ajuste de doses essencial em RN e lactentes.</div>
+      </div>
+      <div class="physio-card">
+        <div class="physio-icon">🌡️</div>
+        <div class="physio-text"><strong>Termorregulação instável</strong>Superfície corporal relativa maior. Hipotermia intraoperatória frequente.</div>
+      </div>
+    </div>
+    <div class="highlight-box">
+      <div class="hb-icon">💡</div>
+      <p><strong>Princípio fundamental:</strong> O cálculo preciso por peso é a principal medida de segurança em anestesia pediátrica. Erros de dose são 3× mais frequentes em crianças. Use sempre mg/kg e confirme o peso atual.</p>
+    </div>
+  </div>
 
-async function __tentarDesbloquear() {
-  const pwd = document.getElementById('gatePassword').value;
-  const errEl = document.getElementById('gateError');
-  const loadEl = document.getElementById('gateLoading');
-  errEl.style.display = 'none';
+  <!-- INPUT SECTION -->
+  <div class="input-section">
+    <div class="section-header">
+      <div class="icon" style="background:rgba(245,245,246,0.1);">📋</div>
+      <div>
+        <h2 style="color:var(--accent2);">Dados do Paciente e Procedimento</h2>
+        <small>Preencha os campos para gerar o plano anestésico completo</small>
+      </div>
+    </div>
 
-  if (!pwd) return;
+    <div class="input-grid">
+      <div class="input-group">
+        <label>Idade (meses)</label>
+        <input type="number" id="idadeMeses" placeholder="ex: 24" min="0" max="216" value="">
+      </div>
+      <div class="input-group">
+        <label>Peso (kg)</label>
+        <input type="number" id="peso" placeholder="ex: 12.5" min="0.5" max="100" step="0.1" value="">
+      </div>
+      <div class="input-group">
+        <label>Altura (cm)</label>
+        <input type="number" id="altura" placeholder="ex: 85" min="20" max="200">
+      </div>
+      <div class="input-group">
+        <label>ASA</label>
+        <select id="asa">
+          <option value="1">ASA I</option>
+          <option value="2">ASA II</option>
+          <option value="3">ASA III</option>
+          <option value="4">ASA IV</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Prematuridade</label>
+        <select id="prematuridade">
+          <option value="nao">Não / A termo</option>
+          <option value="sim">Prematuro (< 37 sem)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Horas de Jejum</label>
+        <input type="number" id="jejum" placeholder="ex: 4" min="0" max="24" value="4">
+      </div>
+      <div class="input-group">
+        <label>Duração Cirurgia</label>
+        <select id="duracao">
+          <option value="curto">Curta (< 1h)</option>
+          <option value="medio">Intermediária (1–3h)</option>
+          <option value="longo">Longa (> 3h)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Nível Nociceptivo</label>
+        <select id="nocicep">
+          <option value="baixo">Baixo (hernia, varizes)</option>
+          <option value="medio">Médio (laparoscopia)</option>
+          <option value="alto">Alto (ortopedia, tórax)</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Via Aérea Planejada</label>
+        <select id="viaAerea">
+          <option value="iot">Intubação Orotraqueal</option>
+          <option value="ml">Máscara Laríngea</option>
+          <option value="mf">Máscara Facial</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Ventilação</label>
+        <select id="ventTipo">
+          <option value="controlada">Controlada (VCV/PCV)</option>
+          <option value="espontanea">Espontânea</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Via Aérea Difícil?</label>
+        <select id="vad">
+          <option value="nao">Não prevista</option>
+          <option value="sim">Prevista / Suspeita</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Miopatia Conhecida?</label>
+        <select id="miopatia">
+          <option value="nao">Não</option>
+          <option value="sim">Sim / Suspeita</option>
+        </select>
+      </div>
+    </div>
 
-  if (!window.crypto || !window.crypto.subtle) {
-    errEl.textContent = 'Seu navegador/contexto não suporta Web Crypto (necessário HTTPS ou arquivo local no Chrome). Tente abrir via um servidor local ou navegador atualizado.';
-    errEl.style.display = 'block';
-    return;
-  }
+    <button class="calc-btn" onclick="calcular()">⚡ Calcular Plano Anestésico Completo</button>
+  </div>
 
-  loadEl.style.display = 'block';
-  try {
-    const enc = new TextEncoder();
-    const salt = __b64ToBuf(__ENC_SALT);
-    const iv = __b64ToBuf(__ENC_IV);
-    const data = __b64ToBuf(__ENC_DATA);
+  <!-- RESULTS -->
+  <div class="results-panel" id="resultsPanel">
 
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw', enc.encode(pwd), { name: 'PBKDF2' }, false, ['deriveKey']
-    );
-    const key = await crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: salt, iterations: __ENC_ITER, hash: 'SHA-256' },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['decrypt']
-    );
-    const decryptedBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, data);
-    const html = new TextDecoder().decode(decryptedBuf);
+    <!-- ALERTS -->
+    <div id="alertsContainer"></div>
 
-    document.getElementById('appRoot').innerHTML = html;
-    document.getElementById('appRoot').style.display = 'block';
-    document.getElementById('gate').style.display = 'none';
-    sessionStorage.setItem('__simuladorUnlocked', '1');
-  } catch (e) {
-    loadEl.style.display = 'none';
-    errEl.textContent = 'Senha incorreta. Tente novamente.';
-    errEl.style.display = 'block';
-    return;
-  }
-  loadEl.style.display = 'none';
-}
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('viaAereaTab', this)">🫁 Via Aérea</button>
+      <button class="tab-btn" onclick="showTab('drogas', this)">💉 Drogas</button>
+      <button class="tab-btn" onclick="showTab('ventilacao', this)">🌬️ Ventilação</button>
+      <button class="tab-btn" onclick="showTab('fluidos', this)">💧 Fluidos</button>
+      <button class="tab-btn" onclick="showTab('hidratacaoHora', this)">⏱️ Hidratação/h</button>
+      <button class="tab-btn" onclick="showTab('adrenalina', this)">💊 Adrenalina</button>
+      <button class="tab-btn" onclick="showTab('profilaxia', this)">🧪 Profilaxia</button>
+      <button class="tab-btn" onclick="showTab('ficha', this)">📄 Ficha Final / PDF</button>
+    </div>
 
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('gateBtn').addEventListener('click', __tentarDesbloquear);
-  document.getElementById('gatePassword').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') __tentarDesbloquear();
-  });
-  document.getElementById('gatePassword').focus();
-});
-</script>
+    <!-- VIA AEREA TAB -->
+    <div class="tab-content active" id="viaAereaTab">
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="result-card-title"><span>🫁</span> Tubo Traqueal</div>
+          <div class="result-row">
+            <span class="result-label">ID sem cuff (idade/4+4)</span>
+            <span class="result-value accent" id="tubeSC">—</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">ID com cuff (idade/4+3.5)</span>
+            <span class="result-value green" id="tubeCC">—</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Tamanho alternativo −</span>
+            <span class="result-value" id="tubeMin">—</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Tamanho alternativo +</span>
+            <span class="result-value" id="tubeMax">—</span>
+          </div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-title"><span>📏</span> Profundidade de Inserção</div>
+          <div class="result-row">
+            <span class="result-label">Método 1 (ID × 3)</span>
+            <span class="result-value accent" id="profM1">—</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Método 2 (Idade/2+12)</span>
+            <span class="result-value green" id="profM2">—</span>
+          </div>
+          <div class="result-row" style="padding-top:10px;">
+            <span class="result-label" style="font-style:italic;font-size:11px;">⚠️ Confirme com ausculta e capnógrafo</span>
+          </div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-title"><span>🔦</span> Lâmina de Laringoscópio</div>
+          <div class="result-row">
+            <span class="result-label">Lâmina recomendada</span>
+            <span class="result-value accent" id="lamina">—</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Alternativa</span>
+            <span class="result-value" id="laminaAlt">—</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Via aérea planejada</span>
+            <span class="result-value green" id="viaAereaDisplay">—</span>
+          </div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-card-title"><span>🎭</span> Máscara Laríngea (LMA)</div>
+          <div id="lma_body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DROGAS TAB -->
+    <div class="tab-content" id="drogas">
+      <div class="result-grid">
+        <!-- INDUCAO -->
+        <div class="result-card">
+          <div class="result-card-title"><span>💉</span> Drogas de Indução</div>
+          <div id="drogas_inducao_body"></div>
+        </div>
+        <!-- BNM -->
+        <div class="result-card">
+          <div class="result-card-title"><span>💪</span> Bloqueadores Neuromusculares</div>
+          <div id="drogas_bnm_body"></div>
+        </div>
+        <!-- REVERSAO -->
+        <div class="result-card">
+          <div class="result-card-title"><span>🔄</span> Reversão do Bloqueio</div>
+          <div id="drogas_reversao_body"></div>
+        </div>
+        <!-- ANALGESIA -->
+        <div class="result-card">
+          <div class="result-card-title"><span>🩹</span> Analgesia Multimodal</div>
+          <div id="drogas_analgesia_body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VENTILACAO TAB -->
+    <div class="tab-content" id="ventilacao">
+      <div class="result-card" style="margin-bottom:16px;">
+        <div class="result-card-title"><span>🌬️</span> Parâmetros Ventilatórios</div>
+        <div id="vent_body"></div>
+      </div>
+    </div>
+
+    <!-- FLUIDOS TAB -->
+    <div class="tab-content" id="fluidos">
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="result-card-title"><span>💧</span> Fluidoterapia (Regra 4-2-1)</div>
+          <div id="fluido_manut_body"></div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-title"><span>🩸</span> Volume Sanguíneo Estimado</div>
+          <div id="fluido_vsang_body"></div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-title"><span>⏱️</span> Reposição do Déficit de Jejum</div>
+          <div id="fluido_deficit_body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HIDRATACAO POR HORA TAB -->
+    <div class="tab-content" id="hidratacaoHora">
+      <div class="result-card" style="margin-bottom:16px;">
+        <div class="result-card-title"><span>⏱️</span> Reposição Volêmica — Linha do Tempo (por hora)</div>
+        <div id="hidratacao_hora_body"></div>
+      </div>
+    </div>
+
+    <!-- ADRENALINA TAB -->
+    <div class="tab-content" id="adrenalina">
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="result-card-title"><span>🧪</span> Preparo / Diluição</div>
+          <div id="adrenalina_preparo_body"></div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-title"><span>🚨</span> PCR — Parada Cardiorrespiratória</div>
+          <div id="adrenalina_pcr_body"></div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-title"><span>💉</span> Bolus Vasopressor (Hipotensão/Bradicardia)</div>
+          <div id="adrenalina_vasopressor_body"></div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-title"><span>📈</span> Infusão Contínua (Choque)</div>
+          <div id="adrenalina_infusao_body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILAXIA TAB -->
+    <div class="tab-content" id="profilaxia">
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="result-card-title"><span>🧪</span> Antibiótico Profilático</div>
+          <div id="antibio_body"></div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-title"><span>🤢</span> Antieméticos (PONV)</div>
+          <div id="antiemetico_body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FICHA FINAL -->
+    <div class="tab-content" id="ficha">
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+        <button class="print-btn" onclick="window.print()">🖨️ Imprimir Ficha</button>
+        <button class="print-btn" style="background:linear-gradient(135deg,var(--accent2),#e0650f);" onclick="gerarPDF(event)">⬇️ Baixar PDF</button>
+      </div>
+      <div class="ficha-card" id="fichaFinal"></div>
+    </div>
+
+  </div><!-- /results-panel -->
+
+</div><!-- /container -->
+
+<footer>
+  Desenvolvido por <strong>Dr. Lucas Caetano</strong> &bull; Simulador Educacional — Não substitui julgamento clínico &bull; <a href="#">v1.0</a>
+</footer>
+
+<!-- CARTÃO DE IMPRESSÃO / PDF — 1 página, gerado dinamicamente em calcular() -->
+<div id="printCard" class="print-card"></div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -928,7 +1175,7 @@ function calcular() {
     <div class="result-row"><span class="result-label">Tamanho sugerido</span><span class="result-value accent" style="font-size:20px;">${lmaLabel}</span></div>
     <div class="result-row"><span class="result-label">Faixa de peso</span><span class="result-value">${lmaFaixa}</span></div>
     <div class="result-row"><span class="result-label">Peso informado</span><span class="result-value green">${peso} kg</span></div>
-    <div style="margin-top:10px;padding:10px;background:rgba(0,212,255,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:10px;padding:10px;background:rgba(255,122,26,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
       💡 Macete: até 30 kg → 1 / 1,5 / 2 / 2,5. Depois → 3, 4 e 5. Se ventilar mal: checar posição e cuff; se ainda vazar, considerar tamanho maior.
     </div>`;
 
@@ -948,7 +1195,7 @@ function calcular() {
       <tr><td>Sevo indução (%)</td><td>6%</td><td>7%</td><td>8%</td></tr>
       <tr><td>Sevo manutenção</td><td>2%</td><td>2.5%</td><td>3%</td></tr>
     </table>
-    <div style="margin-top:10px;padding:10px;background:rgba(0,255,157,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:10px;padding:10px;background:rgba(245,245,246,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
       💡 <strong style="color:var(--accent2);">Indicação Cetamina:</strong> Asma brônquica, instabilidade hemodinâmica, dor intensa, procedimentos sem acesso venoso
     </div>`;
 
@@ -963,7 +1210,7 @@ function calcular() {
       <tr><td>Cisatracúrio (manut.)</td><td>—</td><td>${fmt(0.03*peso,2)} mg</td></tr>
       <tr><td>Succinilcolina</td><td>Emergência VA</td><td>${fmt(1*peso,0)}–${fmt(2*peso,0)} mg</td></tr>
     </table>
-    <div style="margin-top:10px;padding:10px;background:rgba(255,59,59,0.05);border-radius:6px;font-size:11px;color:#ff9999;">
+    <div style="margin-top:10px;padding:10px;background:rgba(255,90,90,0.05);border-radius:6px;font-size:11px;color:#ff9999;">
       ⚠️ Succinilcolina: INVESTIGAR MIOPATIAS OCULTAS. Risco de hipercalemia fatal em distrofias musculares.
     </div>`;
 
@@ -981,7 +1228,7 @@ function calcular() {
       <tr><td>Sugamadex (prof.)</td><td>T1 via TOF</td><td>${fmt(4*peso,0)} mg</td></tr>
       <tr><td>Sugamadex (emerg.)</td><td>Bloq. imediato</td><td>${fmt(16*peso,0)} mg</td></tr>
     </table>
-    <div style="margin-top:10px;padding:10px;background:rgba(0,212,255,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:10px;padding:10px;background:rgba(255,122,26,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
       💡 Sempre monitorizar bloqueio neuromuscular com TOF antes da reversão. Neostigmina requer atropina simultânea.
     </div>`;
 
@@ -995,7 +1242,7 @@ function calcular() {
       <tr><td>Paracetamol (IV)</td><td>${fmt(10*peso,0)}–${fmt(15*peso,0)} mg</td><td>6/6h</td></tr>
       <tr><td>Cetoprofeno</td><td>${cetMin} mg/kg → ${cetMax}</td><td>${idadeMeses < 6 ? '⚠️ < 6 meses' : 'Máx 100mg'}</td></tr>
     </table>
-    <div style="margin-top:10px;padding:10px;background:rgba(0,255,157,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:10px;padding:10px;background:rgba(245,245,246,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
       💡 Analgesia multimodal reduz necessidade de opioides. Associar técnicas regionais quando possível.
     </div>`;
 
@@ -1066,7 +1313,7 @@ function calcular() {
         <div class="vent-val">${frMin}–${frMax} irpm</div>
       </div>
     </div>
-    <div style="margin-top:12px;padding:10px;background:rgba(0,212,255,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:12px;padding:10px;background:rgba(255,122,26,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
       🎯 <strong style="color:var(--accent);">Zona segura:</strong> SpO₂ > 95%, EtCO₂ 35–45 mmHg, ausência de auto-PEEP. Ajuste parâmetros pela mecânica pulmonar e gasometria.
     </div>`;
 
@@ -1086,7 +1333,7 @@ function calcular() {
     <div class="result-row"><span class="result-label">Primeiros 10 kg (4 ml/kg)</span><span class="result-value">${fmt(Math.min(peso,10)*4,0)} ml/h</span></div>
     ${peso > 10 ? `<div class="result-row"><span class="result-label">10–20 kg (+2 ml/kg)</span><span class="result-value">${fmt(Math.min(peso-10,10)*2,0)} ml/h adicionais</span></div>` : ''}
     ${peso > 20 ? `<div class="result-row"><span class="result-label">> 20 kg (+1 ml/kg)</span><span class="result-value">${fmt((peso-20)*1,0)} ml/h adicionais</span></div>` : ''}
-    <div style="margin-top:10px;padding:10px;background:rgba(0,212,255,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:10px;padding:10px;background:rgba(255,122,26,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
       💡 Solução: SF 0,9% ou Ringer lactato. Evitar hipotônicas em < 2 anos sem indicação específica.
     </div>`;
 
@@ -1102,7 +1349,7 @@ function calcular() {
     <div class="result-row"><span class="result-label">Fator por faixa (${vsangFator} ml/kg)</span><span class="result-value">${vsangFator} ml/kg</span></div>
     <div class="result-row"><span class="result-label">10% VSE (início de perdas)</span><span class="result-value warn">${fmt(vsang*0.1,0)} ml</span></div>
     <div class="result-row"><span class="result-label">20% VSE (transfusão?)</span><span class="result-value warn">${fmt(vsang*0.2,0)} ml</span></div>
-    <div style="margin-top:10px;padding:10px;background:rgba(255,107,53,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:10px;padding:10px;background:rgba(255,204,102,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
       ⚠️ Perdas > 10–15% VSE: considerar cristaloides/coloides. Perdas > 20–30%: hemotransfusão.
     </div>`;
 
@@ -1161,7 +1408,7 @@ function calcular() {
       <tr><th>Período</th><th>Manutenção</th><th>Déficit</th><th>3º espaço</th><th>Total/hora</th><th>Acumulado</th></tr>
       ${linhasHTML}
     </table>
-    <div style="margin-top:12px;padding:10px;background:rgba(0,212,255,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:12px;padding:10px;background:rgba(255,122,26,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
       💡 A partir de quando o déficit é quitado (geralmente após a 3ª hora), infundir apenas manutenção + perdas de 3º espaço. Reavaliar conforme sangramento, diurese e estabilidade hemodinâmica. Perdas de 3º espaço são estimativa (mínimo 2–4 / moderado 4–6 / grave 6–8 ml/kg/h) — ajustar pelo porte cirúrgico real.
     </div>`;
 
@@ -1184,15 +1431,15 @@ function calcular() {
   document.getElementById('adrenalina_preparo_body').innerHTML = `
     <div class="fluid-steps" style="flex-direction:column;">
       <div class="fluid-step" style="text-align:left;">
-        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Diluição 1 — Soro de Parada</div>
+        <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Diluição 1 — Soro de Parada</div>
         <div style="font-size:13px;color:var(--text);">1 mg (1 ml) de adrenalina + 99 ml SF 0,9% = <strong style="color:var(--accent2);">100 ml → 10 mcg/ml</strong></div>
       </div>
       <div class="fluid-step" style="text-align:left;margin-top:8px;">
-        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Diluição 2 — Seringa Vasopressora</div>
+        <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">Diluição 2 — Seringa Vasopressora</div>
         <div style="font-size:13px;color:var(--text);">1 ml da solução acima (10 mcg) + SF 0,9% qsp 10 ml = <strong style="color:var(--accent2);">10 ml → 1 mcg/ml</strong></div>
       </div>
     </div>
-    <div style="margin-top:12px;padding:10px;background:rgba(255,107,53,0.06);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:12px;padding:10px;background:rgba(255,204,102,0.06);border-radius:6px;font-size:11px;color:var(--muted);">
       ⚠️ Identificar e separar claramente as duas soluções (rótulo/etiqueta): soro 10 mcg/ml para PCR/infusão vs. seringa 1 mcg/ml para bolus titulável.
     </div>`;
 
@@ -1208,7 +1455,7 @@ function calcular() {
     <div class="result-row"><span class="result-label">Dose padrão (1 mcg/kg)</span><span class="result-value green">${fmt(vasoPadraoVol,1)} ml (sol. 1 mcg/ml)</span></div>
     <div class="result-row"><span class="result-label">Via</span><span class="result-value">IV (bolus lento)</span></div>
     <div class="result-row"><span class="result-label">Repetir/titular</span><span class="result-value">Conforme resposta pressórica</span></div>
-    <div style="margin-top:10px;padding:10px;background:rgba(0,212,255,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:10px;padding:10px;background:rgba(255,122,26,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
       💡 Doses de resgate usuais para hipotensão/bradicardia intraoperatória. Em casos refratários pode-se titular acima de 1 mcg/kg conforme resposta clínica e protocolo do serviço.
     </div>`;
 
@@ -1216,7 +1463,7 @@ function calcular() {
     <div class="result-row"><span class="result-label">Dose inicial usual</span><span class="result-value accent">0,05–0,1 mcg/kg/min</span></div>
     <div class="result-row"><span class="result-label">Taxa (0,1 mcg/kg/min, sol. 10 mcg/ml)</span><span class="result-value green">${fmt(infusaoMLh,1)} ml/h</span></div>
     <div class="result-row"><span class="result-label">Faixa de titulação</span><span class="result-value">0,05–1 mcg/kg/min</span></div>
-    <div style="margin-top:10px;padding:10px;background:rgba(255,107,53,0.06);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:10px;padding:10px;background:rgba(255,204,102,0.06);border-radius:6px;font-size:11px;color:var(--muted);">
       ⚠️ Preferir via central quando disponível para infusão contínua. Titular pela resposta hemodinâmica (PA, FC, perfusão).
     </div>`;
 
@@ -1237,7 +1484,7 @@ function calcular() {
     <div class="result-row"><span class="result-label">Ondansetrona (IV)</span><span class="result-value accent">${fmt(ondMax,2)} mg</span></div>
     <div class="result-row"><span class="result-label">Dexametasona</span><span class="result-value green">${fmt(dexMax,2)} mg</span></div>
     <div class="result-row"><span class="result-label">Metoclopramida</span><span class="result-value ${metocl ? '' : 'warn'}">${metocl ? fmt(0.15*peso,2)+' mg' : '⚠️ EVITAR < 1 ANO'}</span></div>
-    <div style="margin-top:10px;padding:10px;background:rgba(0,212,255,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
+    <div style="margin-top:10px;padding:10px;background:rgba(255,122,26,0.05);border-radius:6px;font-size:11px;color:var(--muted);">
       💡 Ondansetrona + Dexametasona = combinação de primeira linha para profilaxia PONV em pediatria.
     </div>`;
 
@@ -1443,7 +1690,7 @@ function calcular() {
     </div>
     ${alertas.length ? `<div class="pc-alerts"><b>⚠ ALERTAS:</b> ${alertasResumo}</div>` : ''}
     <div class="pc-grid">
-      <div class="pc-cell" style="--pc-c:#2d9cdb;">
+      <div class="pc-cell" style="--pc-c:#ff7a1a;">
         <div class="pc-cell-title">🫁 Via Aérea</div>
         <ul>
           <li>Tubo s/cuff <b>${tubeSC.toFixed(1)}</b> &bull; c/cuff <b>${tubeCC.toFixed(1)}</b> mm</li>
@@ -1588,3 +1835,4 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
