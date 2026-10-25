@@ -24,15 +24,18 @@
   .screen{position:fixed;inset:0;display:none;flex-direction:column;}
   .screen.active{display:flex;}
 
-  /* ===== TELA-GUARDIÃ (fachada: cadeado iOS) ===== */
-  #guard{align-items:center;justify-content:flex-start;
-    background:radial-gradient(130% 90% at 50% 0%,#15223a 0%,#000 70%);}
-  #guard .lockglyph{margin-top:14vh;font-size:30px;opacity:.9;}
-  #guard .clock{font-size:76px;font-weight:600;letter-spacing:-2px;margin-top:6px;line-height:1;}
-  #guard .date{font-size:19px;color:#e5e5ea;margin-top:4px;font-weight:500;}
-  #guard .hint{position:absolute;bottom:40px;color:#d1d1d6;font-size:14px;opacity:.75;
-    display:flex;flex-direction:column;align-items:center;gap:8px;}
-  #guard .grip{width:130px;height:5px;border-radius:3px;background:#fff;opacity:.85;}
+  /* ===== TELA-GUARDIÃ (fachada: tela bloqueada c/ aviso de atualização) ===== */
+  #guard{align-items:center;justify-content:flex-start;background:#000;
+    background-size:cover;background-position:center;background-repeat:no-repeat;}
+  #guard:not(.hasbg){background-image:radial-gradient(130% 90% at 50% 0%,#15223a 0%,#000 70%);}
+  #guard .scrim{position:absolute;inset:0;z-index:0;
+    background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,.15) 32%,rgba(0,0,0,.6));}
+  #guard .lock-top{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;}
+  #guard .lockglyph{margin-top:12vh;font-size:26px;opacity:.9;}
+  #guard .clock{font-size:76px;font-weight:600;letter-spacing:-2px;margin-top:6px;line-height:1;
+    text-shadow:0 2px 14px rgba(0,0,0,.5);}
+  #guard .date{font-size:19px;color:#f1f1f5;margin-top:4px;font-weight:500;text-shadow:0 1px 10px rgba(0,0,0,.5);}
+  #guard .alert{position:relative;z-index:1;margin-top:auto;margin-bottom:11vh;}
 
   /* ===== ALERTA FALSO DE ATUALIZAÇÃO ===== */
   #updateOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
@@ -114,23 +117,23 @@
   .pill.ok{background:#12351a;color:var(--green);}
   .pill.no{background:#3a1413;color:var(--red);}
   video.prev{width:90px;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#111;}
+  .bgprev{width:84px;aspect-ratio:9/19;border-radius:10px;border:1px solid var(--sep);
+    background:#111 center/cover no-repeat;display:none;}
 </style>
 </head>
 <body>
 
-<!-- ======= GUARD (fachada) ======= -->
+<!-- ======= GUARD (fachada: tela bloqueada com o aviso de atualização já visível) ======= -->
 <div id="guard" class="screen">
-  <div class="lockglyph">􀎡 🔒</div>
-  <div class="clock" id="gClock">00:00</div>
-  <div class="date" id="gDate">—</div>
-  <div class="hint"><span>deslize para cima para abrir</span><div class="grip"></div></div>
-</div>
-
-<!-- ======= UPDATE FALSO ======= -->
-<div id="updateOverlay">
+  <div class="scrim"></div>
+  <div class="lock-top">
+    <div class="lockglyph">🔒</div>
+    <div class="clock" id="gClock">00:00</div>
+    <div class="date" id="gDate">—</div>
+  </div>
   <div class="alert">
     <div class="body">
-      <div class="ic">􀆿⬇︎</div>
+      <div class="ic" style="font-weight:700">↓</div>
       <h3>Atualização do iOS</h3>
       <p>O iOS está pronto para ser instalado nesta madrugada. Deseja instalar agora?</p>
     </div>
@@ -172,6 +175,15 @@
       <select id="cfgRelock"><option value="1">Sim</option><option value="0">Não</option></select></div>
   </div>
 
+  <div class="sec">Plano de fundo da tela bloqueada</div>
+  <div class="row" style="justify-content:center;gap:14px">
+    <div class="bgprev" id="bgPrev"></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label class="btn grey" style="margin:0">Escolher imagem<input type="file" accept="image/*" style="display:none" onchange="pickOwnerBg(this)"></label>
+      <button class="btn red" style="margin:0" onclick="clearOwnerBg()">Remover fundo</button>
+    </div>
+  </div>
+
   <div class="sec">Senhas</div>
   <div class="card">
     <div class="row"><span>Senha-segura (libera)</span><input id="cfgSafe" inputmode="numeric" maxlength="8"></div>
@@ -204,6 +216,15 @@
   </div>
   <div class="hintbox">Mesmo tamanho (4–8 dígitos), diferentes. A <b>segura</b> é a que você usa normalmente; a <b>armadilha</b> é a que dispara foto + alarme — nunca digite ela sem querer.</div>
 
+  <div class="sec">Plano de fundo (opcional)</div>
+  <div class="row" style="justify-content:center;gap:14px">
+    <div class="bgprev" id="bgPrev2"></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label class="btn grey" style="margin:0">Escolher imagem<input type="file" accept="image/*" style="display:none" onchange="pickSetupBg(this)"></label>
+      <button class="btn red" style="margin:0" onclick="clearSetupBg()">Remover</button>
+    </div>
+  </div>
+
   <button class="btn grey" onclick="testCam()">Testar câmera frontal (recomendado)</button>
   <div class="row" style="justify-content:center;gap:12px"><span id="camStatus2">Toque para autorizar a câmera</span><video class="prev" id="camPrev2" playsinline muted style="display:none"></video></div>
 
@@ -234,16 +255,51 @@ function tick(){
 }
 setInterval(tick,1000);tick();
 
-/* ===================== FACHADA → UPDATE → PIN ===================== */
-document.getElementById('guard').addEventListener('click',()=>{
-  if(state==='guard') document.getElementById('updateOverlay').classList.add('active');
-});
+/* ===================== FACHADA → PIN ===================== */
+// O aviso de atualização já fica visível na própria tela bloqueada;
+// tocar em qualquer botão leva ao teclado de senha.
 function askPin(){
-  document.getElementById('updateOverlay').classList.remove('active');
   typed='';renderDots();show('pin');
   // "acorda" o áudio aproveitando o gesto do toque
   try{ensureAudio();}catch(e){}
 }
+
+/* ===================== PLANO DE FUNDO ===================== */
+function applyWallpaper(){
+  const g=document.getElementById('guard');
+  if(cfg&&cfg.bg){ g.style.backgroundImage='url('+cfg.bg+')'; g.classList.add('hasbg'); }
+  else{ g.style.backgroundImage=''; g.classList.remove('hasbg'); }
+}
+// Lê um arquivo de imagem, reduz para no máx. 1200px e devolve um JPEG compacto (data URL)
+function fileToWallpaper(file,cb){
+  const rd=new FileReader();
+  rd.onload=()=>{ const img=new Image();
+    img.onload=()=>{
+      const max=1200; let w=img.width,h=img.height;
+      if(w>h&&w>max){ h=Math.round(h*max/w); w=max; }
+      else if(h>=w&&h>max){ w=Math.round(w*max/h); h=max; }
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      cb(c.toDataURL('image/jpeg',0.82));
+    };
+    img.onerror=()=>cb(null); img.src=rd.result;
+  };
+  rd.onerror=()=>cb(null); rd.readAsDataURL(file);
+}
+function updateBgPreview(elId,dataUrl){
+  const el=document.getElementById(elId); if(!el)return;
+  if(dataUrl){ el.style.backgroundImage='url('+dataUrl+')'; el.style.display='block'; }
+  else{ el.style.backgroundImage=''; el.style.display='none'; }
+}
+// Durante a configuração inicial o cfg ainda não existe: guardamos aqui.
+let setupBg=null;
+function pickSetupBg(inp){ const f=inp.files&&inp.files[0]; if(!f)return;
+  fileToWallpaper(f,d=>{ if(!d){alert('Não consegui ler essa imagem.');return;} setupBg=d; updateBgPreview('bgPrev2',d); }); }
+function clearSetupBg(){ setupBg=null; updateBgPreview('bgPrev2',null); }
+function pickOwnerBg(inp){ const f=inp.files&&inp.files[0]; if(!f)return;
+  fileToWallpaper(f,d=>{ if(!d){alert('Não consegui ler essa imagem.');return;}
+    cfg.bg=d; saveCfg(); updateBgPreview('bgPrev',d); applyWallpaper(); }); }
+function clearOwnerBg(){ cfg.bg=null; saveCfg(); updateBgPreview('bgPrev',null); applyWallpaper(); }
 
 /* ===================== PINPAD ===================== */
 function buildKeys(){
@@ -359,6 +415,7 @@ async function openOwner(){
   document.getElementById('cfgRelock').value=cfg.relock?'1':'0';
   document.getElementById('cfgSafe').value=cfg.safe;
   document.getElementById('cfgTrap').value=cfg.trap;
+  updateBgPreview('bgPrev',cfg.bg||null);
   renderGallery();
 }
 async function renderGallery(){
@@ -393,8 +450,7 @@ function saveConfig(lockAfter){
   saveCfg();renderDots();
   if(lockAfter){ lockGuard(); } else { alert('Configurações salvas.'); }
 }
-function lockGuard(){ document.getElementById('updateOverlay').classList.remove('active');
-  typed='';show('guard');reqWake(); }
+function lockGuard(){ applyWallpaper(); typed='';show('guard');reqWake(); }
 
 /* ===================== SETUP ===================== */
 function finishSetup(){
@@ -404,7 +460,7 @@ function finishSetup(){
   cfg={safe,trap,len:safe.length,
     start:document.getElementById('sStart').value,
     end:document.getElementById('sEnd').value,
-    wrong:3,relock:true};
+    wrong:3,relock:true,bg:setupBg};
   saveCfg();buildKeys();renderDots();lockGuard();
 }
 
@@ -421,7 +477,7 @@ document.addEventListener('visibilitychange',()=>{
 
 /* ===================== BOOT ===================== */
 buildKeys();
-if(cfg){ renderDots();show('guard');reqWake(); }
+if(cfg){ renderDots();applyWallpaper();show('guard');reqWake(); }
 else{ show('setup'); }
 </script>
 <script>
