@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Relógio">
+<meta name="theme-color" content="#000000">
+<title>Relógio</title>
+<style>
+  :root{
+    --bg:#000; --fg:#fff; --muted:#8e8e93; --sep:#2c2c2e;
+    --card:#1c1c1e; --card2:#2c2c2e; --blue:#0a84ff; --red:#ff453a; --green:#30d158;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+    overflow:hidden;user-select:none;-webkit-user-select:none;}
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;}
+  .screen.active{display:flex;}
+
+  /* ===== TELA-GUARDIÃ (fachada: cadeado iOS) ===== */
+  #guard{align-items:center;justify-content:flex-start;
+    background:radial-gradient(130% 90% at 50% 0%,#15223a 0%,#000 70%);}
+  #guard .lockglyph{margin-top:14vh;font-size:30px;opacity:.9;}
+  #guard .clock{font-size:76px;font-weight:600;letter-spacing:-2px;margin-top:6px;line-height:1;}
+  #guard .date{font-size:19px;color:#e5e5ea;margin-top:4px;font-weight:500;}
+  #guard .hint{position:absolute;bottom:40px;color:#d1d1d6;font-size:14px;opacity:.75;
+    display:flex;flex-direction:column;align-items:center;gap:8px;}
+  #guard .grip{width:130px;height:5px;border-radius:3px;background:#fff;opacity:.85;}
+
+  /* ===== ALERTA FALSO DE ATUALIZAÇÃO ===== */
+  #updateOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:40;}
+  #updateOverlay.active{display:flex;}
+  .alert{width:270px;background:rgba(44,44,46,.92);border-radius:14px;overflow:hidden;text-align:center;
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
+  .alert .body{padding:18px 16px 14px;}
+  .alert .ic{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#34c759,#248a3d);
+    margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;}
+  .alert h3{margin:0 0 5px;font-size:17px;font-weight:600;}
+  .alert p{margin:0;font-size:13px;color:#d1d1d6;line-height:1.35;}
+  .alert .btns{border-top:.5px solid rgba(255,255,255,.18);display:flex;flex-direction:column;}
+  .alert .btns button{all:unset;padding:12px;font-size:17px;color:var(--blue);cursor:pointer;
+    border-top:.5px solid rgba(255,255,255,.18);}
+  .alert .btns button:first-child{border-top:none;font-weight:600;}
+
+  /* ===== TECLADO DE SENHA (iOS passcode) ===== */
+  #pin{align-items:center;justify-content:center;background:rgba(0,0,0,.55);
+    backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);z-index:50;}
+  #pin .title{font-size:17px;margin-bottom:22px;font-weight:400;}
+  #pin .dots{display:flex;gap:20px;margin-bottom:38px;height:14px;}
+  #pin .dot{width:13px;height:13px;border-radius:50%;border:1px solid #fff;}
+  #pin .dot.on{background:#fff;}
+  #pin.shake{animation:sh .4s;}
+  @keyframes sh{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-12px)}40%,80%{transform:translateX(12px)}}
+  .keys{display:grid;grid-template-columns:repeat(3,76px);gap:20px;}
+  .key{width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,.14);
+    display:flex;align-items:center;justify-content:center;font-size:33px;font-weight:400;cursor:pointer;}
+  .key:active{background:rgba(255,255,255,.3);}
+  .key.blank{background:none;}
+  .key small{font-size:10px;letter-spacing:2px;color:#d1d1d6;position:absolute;margin-top:30px;}
+  .key .wrap{display:flex;flex-direction:column;align-items:center;line-height:1;}
+  .key .wrap small{position:static;margin-top:3px;font-size:9px;letter-spacing:2px;}
+  #pin .del{font-size:15px;color:#fff;}
+
+  /* ===== ALARME ===== */
+  #alarm{align-items:center;justify-content:center;background:#c40000;z-index:70;}
+  #alarm.flash{animation:fl .5s steps(1) infinite;}
+  @keyframes fl{50%{background:#000;}}
+  #alarm .warn{font-size:30px;font-weight:800;text-align:center;padding:0 20px;letter-spacing:.5px;}
+  #alarm .sub{margin-top:14px;color:#ffd;opacity:.9;font-size:14px;}
+  #alarm input{margin-top:26px;width:170px;text-align:center;font-size:26px;letter-spacing:10px;
+    padding:12px;border-radius:12px;border:none;background:rgba(0,0,0,.4);color:#fff;}
+
+  /* ===== PAINEL DO DONO ===== */
+  #owner{background:#000;overflow:auto;padding:0;}
+  #owner .top{padding:54px 20px 14px;font-size:30px;font-weight:700;}
+  #owner .sec{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;
+    padding:18px 20px 7px;}
+  .card{background:var(--card);margin:0 16px;border-radius:12px;overflow:hidden;}
+  .row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;
+    border-top:.5px solid var(--sep);font-size:16px;}
+  .row:first-child{border-top:none;}
+  .row input,.row select{background:var(--card2);border:none;color:#fff;font-size:16px;
+    padding:9px 11px;border-radius:9px;text-align:right;max-width:150px;}
+  .row input[type=time]{text-align:center;}
+  .btn{all:unset;display:block;text-align:center;background:var(--blue);color:#fff;
+    padding:15px;border-radius:12px;font-size:17px;font-weight:600;margin:16px;cursor:pointer;}
+  .btn.red{background:#3a1413;color:var(--red);}
+  .btn.grey{background:var(--card);color:#fff;}
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px 16px;}
+  .gallery figure{margin:0;position:relative;border-radius:10px;overflow:hidden;background:#111;}
+  .gallery img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;}
+  .gallery figcaption{position:absolute;bottom:0;left:0;right:0;font-size:9px;padding:3px 5px;
+    background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff;}
+  .gallery .x{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);width:22px;height:22px;
+    border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;}
+  .empty{color:var(--muted);text-align:center;padding:26px;font-size:14px;}
+
+  /* ===== SETUP ===== */
+  #setup{background:#000;overflow:auto;}
+  #setup .top{padding:54px 20px 6px;font-size:28px;font-weight:700;}
+  #setup .lead{padding:0 20px 8px;color:var(--muted);font-size:14px;line-height:1.4;}
+  .hintbox{margin:10px 16px;padding:12px 14px;background:#2a2410;border:.5px solid #5c4a0f;
+    border-radius:10px;color:#f0d88a;font-size:12.5px;line-height:1.45;}
+  #camStatus{font-size:13px;}
+  .pill{font-size:12px;padding:2px 9px;border-radius:20px;}
+  .pill.ok{background:#12351a;color:var(--green);}
+  .pill.no{background:#3a1413;color:var(--red);}
+  video.prev{width:90px;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#111;}
+</style>
+</head>
+<body>
+
+<!-- ======= GUARD (fachada) ======= -->
+<div id="guard" class="screen">
+  <div class="lockglyph">􀎡 🔒</div>
+  <div class="clock" id="gClock">00:00</div>
+  <div class="date" id="gDate">—</div>
+  <div class="hint"><span>deslize para cima para abrir</span><div class="grip"></div></div>
+</div>
+
+<!-- ======= UPDATE FALSO ======= -->
+<div id="updateOverlay">
+  <div class="alert">
+    <div class="body">
+      <div class="ic">􀆿⬇︎</div>
+      <h3>Atualização do iOS</h3>
+      <p>O iOS está pronto para ser instalado nesta madrugada. Deseja instalar agora?</p>
+    </div>
+    <div class="btns">
+      <button onclick="askPin()">Instalar agora</button>
+      <button onclick="askPin()">Lembrar daqui a 2 h</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= PIN ======= -->
+<div id="pin" class="screen">
+  <div class="title">Digite o Código</div>
+  <div class="dots" id="dots"></div>
+  <div class="keys" id="keys"></div>
+</div>
+
+<!-- ======= ALARME ======= -->
+<div id="alarm" class="screen">
+  <div class="warn">⚠ ACESSO NÃO<br>AUTORIZADO</div>
+  <div class="sub">Digite o código para desativar o alarme</div>
+  <input id="alarmPin" inputmode="numeric" maxlength="8" placeholder="••••">
+</div>
+
+<!-- ======= DONO ======= -->
+<div id="owner" class="screen">
+  <div class="top">Painel · modo dono</div>
+
+  <div class="sec">Fotos capturadas</div>
+  <div class="gallery" id="gallery"></div>
+
+  <div class="sec">Proteção</div>
+  <div class="card">
+    <div class="row"><span>Janela de proteção</span>
+      <span><input type="time" id="cfgStart"> – <input type="time" id="cfgEnd"></span></div>
+    <div class="row"><span>Fotos após nº de erros</span>
+      <select id="cfgWrong"><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+    <div class="row"><span>Re-bloquear ao sair do app</span>
+      <select id="cfgRelock"><option value="1">Sim</option><option value="0">Não</option></select></div>
+  </div>
+
+  <div class="sec">Senhas</div>
+  <div class="card">
+    <div class="row"><span>Senha-segura (libera)</span><input id="cfgSafe" inputmode="numeric" maxlength="8"></div>
+    <div class="row"><span>Senha-armadilha (alarme)</span><input id="cfgTrap" inputmode="numeric" maxlength="8"></div>
+  </div>
+  <div class="hintbox">As duas senhas precisam ter o mesmo tamanho (4 a 8 dígitos) e ser diferentes entre si.</div>
+
+  <button class="btn grey" onclick="testCam()">Testar câmera frontal</button>
+  <div class="row" style="justify-content:center;gap:12px"><span id="camStatus">—</span><video class="prev" id="camPrev" playsinline muted style="display:none"></video></div>
+
+  <button class="btn" onclick="saveConfig(true)">Salvar e bloquear agora</button>
+  <button class="btn grey" onclick="saveConfig(false)">Só salvar</button>
+</div>
+
+<!-- ======= SETUP (primeira vez) ======= -->
+<div id="setup" class="screen">
+  <div class="top">Configuração inicial</div>
+  <div class="lead">Defina as duas senhas e a janela de proteção. Depois é só deixar o app aberto na cabeceira.</div>
+
+  <div class="sec">Janela de proteção</div>
+  <div class="card">
+    <div class="row"><span>Início</span><input type="time" id="sStart" value="23:00"></div>
+    <div class="row"><span>Fim</span><input type="time" id="sEnd" value="08:00"></div>
+  </div>
+
+  <div class="sec">Senhas</div>
+  <div class="card">
+    <div class="row"><span>Senha-segura (libera)</span><input id="sSafe" inputmode="numeric" maxlength="8" placeholder="ex: 1234"></div>
+    <div class="row"><span>Senha-armadilha (alarme)</span><input id="sTrap" inputmode="numeric" maxlength="8" placeholder="ex: 9999"></div>
+  </div>
+  <div class="hintbox">Mesmo tamanho (4–8 dígitos), diferentes. A <b>segura</b> é a que você usa normalmente; a <b>armadilha</b> é a que dispara foto + alarme — nunca digite ela sem querer.</div>
+
+  <button class="btn grey" onclick="testCam()">Testar câmera frontal (recomendado)</button>
+  <div class="row" style="justify-content:center;gap:12px"><span id="camStatus2">Toque para autorizar a câmera</span><video class="prev" id="camPrev2" playsinline muted style="display:none"></video></div>
+
+  <button class="btn" onclick="finishSetup()">Concluir e ativar proteção</button>
+</div>
+
+<script>
+/* ===================== ESTADO / CONFIG ===================== */
+const LS='antiespiao_cfg';
+let cfg=JSON.parse(localStorage.getItem(LS)||'null');
+let state='guard';          // guard | pin | owner | alarm
+let typed='';               // dígitos digitados no pinpad
+let wrongCount=0;
+
+function saveCfg(){localStorage.setItem(LS,JSON.stringify(cfg));}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');state=id;}
+
+/* ===================== RELÓGIO DA FACHADA ===================== */
+function tick(){
+  const d=new Date();
+  const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0');
+  const gc=document.getElementById('gClock'); if(gc)gc.textContent=hh+':'+mm;
+  const dias=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  const mes=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const gd=document.getElementById('gDate');
+  if(gd)gd.textContent=dias[d.getDay()]+', '+d.getDate()+' de '+mes[d.getMonth()];
+}
+setInterval(tick,1000);tick();
+
+/* ===================== FACHADA → UPDATE → PIN ===================== */
+document.getElementById('guard').addEventListener('click',()=>{
+  if(state==='guard') document.getElementById('updateOverlay').classList.add('active');
+});
+function askPin(){
+  document.getElementById('updateOverlay').classList.remove('active');
+  typed='';renderDots();show('pin');
+  // "acorda" o áudio aproveitando o gesto do toque
+  try{ensureAudio();}catch(e){}
+}
+
+/* ===================== PINPAD ===================== */
+function buildKeys(){
+  const subs={2:'ABC',3:'DEF',4:'GHI',5:'JKL',6:'MNO',7:'PQRS',8:'TUV',9:'WXYZ'};
+  const k=document.getElementById('keys');k.innerHTML='';
+  const order=[1,2,3,4,5,6,7,8,9,'blank',0,'del'];
+  order.forEach(n=>{
+    const b=document.createElement('div');
+    if(n==='blank'){b.className='key blank';}
+    else if(n==='del'){b.className='key del';b.textContent='apagar';b.onclick=()=>{typed=typed.slice(0,-1);renderDots();};}
+    else{b.className='key';
+      b.innerHTML='<div class="wrap">'+n+(subs[n]?'<small>'+subs[n]+'</small>':'')+'</div>';
+      b.onclick=()=>pressDigit(String(n));}
+    k.appendChild(b);
+  });
+}
+function renderDots(){
+  const len=cfg?cfg.len:4;
+  const d=document.getElementById('dots');d.innerHTML='';
+  for(let i=0;i<len;i++){const o=document.createElement('div');o.className='dot'+(i<typed.length?' on':'');d.appendChild(o);}
+}
+function pressDigit(n){
+  if(typed.length>=cfg.len)return;
+  typed+=n;renderDots();
+  if(typed.length>=cfg.len) setTimeout(checkPin,120);
+}
+function checkPin(){
+  if(typed===cfg.safe){ typed='';wrongCount=0;openOwner(); }
+  else if(typed===cfg.trap){ typed='';triggerTrap(); }
+  else{
+    wrongCount++;
+    const p=document.getElementById('pin');p.classList.add('shake');
+    setTimeout(()=>p.classList.remove('shake'),400);
+    typed='';renderDots();
+    if(wrongCount>=cfg.wrong){ wrongCount=0; capturePhoto(); } // selfie silenciosa do intruso
+  }
+}
+
+/* ===================== ARMADILHA (foto + alarme) ===================== */
+function triggerTrap(){
+  capturePhoto();            // tira a foto já (câmera liga só agora)
+  show('alarm');
+  const a=document.getElementById('alarm');a.classList.add('flash');
+  startAlarm();
+  const inp=document.getElementById('alarmPin');inp.value='';inp.focus();
+}
+document.getElementById('alarmPin').addEventListener('input',e=>{
+  if(e.target.value===cfg.safe){ stopAlarm();
+    document.getElementById('alarm').classList.remove('flash');
+    e.target.blur();openOwner(); }
+});
+
+/* ===================== ALARME (WebAudio) ===================== */
+let ac,osc,gain,sirenTimer;
+function ensureAudio(){ if(!ac){ac=new (window.AudioContext||window.webkitAudioContext)();}
+  if(ac.state==='suspended')ac.resume(); }
+function startAlarm(){
+  ensureAudio();
+  osc=ac.createOscillator();gain=ac.createGain();
+  osc.type='sawtooth';gain.gain.value=0.9;
+  osc.connect(gain);gain.connect(ac.destination);osc.start();
+  let hi=true;
+  sirenTimer=setInterval(()=>{osc.frequency.setValueAtTime(hi?1300:620,ac.currentTime);hi=!hi;},330);
+}
+function stopAlarm(){ if(sirenTimer)clearInterval(sirenTimer);
+  try{osc.stop();osc.disconnect();}catch(e){} }
+
+/* ===================== CÂMERA ===================== */
+async function capturePhoto(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+    const v=document.createElement('video');v.srcObject=stream;v.playsInline=true;v.muted=true;
+    await v.play();
+    await new Promise(r=>setTimeout(r,700));         // deixa a câmera ajustar a exposição
+    const c=document.createElement('canvas');
+    c.width=v.videoWidth||480;c.height=v.videoHeight||640;
+    c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+    const dataUrl=c.toDataURL('image/jpeg',0.82);
+    stream.getTracks().forEach(t=>t.stop());
+    await savePhoto(dataUrl);
+  }catch(e){console.warn('Falha na câmera:',e);}
+}
+async function testCam(){
+  const st=document.getElementById('camStatus')||document.getElementById('camStatus2');
+  const pv=document.getElementById('camPrev')||document.getElementById('camPrev2');
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+    if(pv){pv.srcObject=stream;pv.style.display='block';await pv.play();}
+    if(st){st.innerHTML='<span class="pill ok">Câmera OK</span>';}
+    setTimeout(()=>{stream.getTracks().forEach(t=>t.stop());if(pv)pv.style.display='none';},2500);
+  }catch(e){ if(st)st.innerHTML='<span class="pill no">Sem permissão / falhou</span>'; }
+}
+
+/* ===================== INDEXEDDB (fotos) ===================== */
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('antiespiao',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('fotos',{keyPath:'id',autoIncrement:true});
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function savePhoto(dataUrl){const db=await openDB();return new Promise((res,rej)=>{
+  const tx=db.transaction('fotos','readwrite');tx.objectStore('fotos').add({ts:Date.now(),dataUrl});
+  tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});}
+async function allPhotos(){const db=await openDB();return new Promise(res=>{
+  const tx=db.transaction('fotos','readonly');const q=tx.objectStore('fotos').getAll();
+  q.onsuccess=()=>res(q.result.sort((a,b)=>b.ts-a.ts));});}
+async function delPhoto(id){const db=await openDB();return new Promise(res=>{
+  const tx=db.transaction('fotos','readwrite');tx.objectStore('fotos').delete(id);tx.oncomplete=res;});}
+
+/* ===================== PAINEL DO DONO ===================== */
+async function openOwner(){
+  show('owner');
+  document.getElementById('cfgStart').value=cfg.start;
+  document.getElementById('cfgEnd').value=cfg.end;
+  document.getElementById('cfgWrong').value=cfg.wrong;
+  document.getElementById('cfgRelock').value=cfg.relock?'1':'0';
+  document.getElementById('cfgSafe').value=cfg.safe;
+  document.getElementById('cfgTrap').value=cfg.trap;
+  renderGallery();
+}
+async function renderGallery(){
+  const g=document.getElementById('gallery');const fotos=await allPhotos();
+  if(!fotos.length){g.innerHTML='<div class="empty" style="grid-column:1/-1">Nenhuma foto capturada ainda.</div>';return;}
+  g.innerHTML='';
+  fotos.forEach(f=>{
+    const d=new Date(f.ts);
+    const fig=document.createElement('figure');
+    fig.innerHTML='<img src="'+f.dataUrl+'"><figcaption>'+
+      d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+
+      '</figcaption><div class="x">✕</div>';
+    fig.querySelector('.x').onclick=async()=>{await delPhoto(f.id);renderGallery();};
+    g.appendChild(fig);
+  });
+}
+function validPins(safe,trap){
+  if(!/^\d{4,8}$/.test(safe)||!/^\d{4,8}$/.test(trap))return 'Senhas devem ter 4 a 8 dígitos.';
+  if(safe.length!==trap.length)return 'As duas senhas precisam ter o mesmo tamanho.';
+  if(safe===trap)return 'As senhas precisam ser diferentes.';
+  return null;
+}
+function saveConfig(lockAfter){
+  const safe=document.getElementById('cfgSafe').value.trim();
+  const trap=document.getElementById('cfgTrap').value.trim();
+  const err=validPins(safe,trap);if(err){alert(err);return;}
+  cfg.safe=safe;cfg.trap=trap;cfg.len=safe.length;
+  cfg.start=document.getElementById('cfgStart').value;
+  cfg.end=document.getElementById('cfgEnd').value;
+  cfg.wrong=parseInt(document.getElementById('cfgWrong').value);
+  cfg.relock=document.getElementById('cfgRelock').value==='1';
+  saveCfg();renderDots();
+  if(lockAfter){ lockGuard(); } else { alert('Configurações salvas.'); }
+}
+function lockGuard(){ document.getElementById('updateOverlay').classList.remove('active');
+  typed='';show('guard');reqWake(); }
+
+/* ===================== SETUP ===================== */
+function finishSetup(){
+  const safe=document.getElementById('sSafe').value.trim();
+  const trap=document.getElementById('sTrap').value.trim();
+  const err=validPins(safe,trap);if(err){alert(err);return;}
+  cfg={safe,trap,len:safe.length,
+    start:document.getElementById('sStart').value,
+    end:document.getElementById('sEnd').value,
+    wrong:3,relock:true};
+  saveCfg();buildKeys();renderDots();lockGuard();
+}
+
+/* ===================== WAKE LOCK + RE-BLOQUEIO ===================== */
+let wl=null;
+async function reqWake(){try{if('wakeLock'in navigator)wl=await navigator.wakeLock.request('screen');}catch(e){}}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    reqWake();
+    // se a proteção está ativa e o app voltou do segundo plano, volta pra fachada
+    if(cfg&&cfg.relock&&(state==='owner')){ lockGuard(); }
+  }
+});
+
+/* ===================== BOOT ===================== */
+buildKeys();
+if(cfg){ renderDots();show('guard');reqWake(); }
+else{ show('setup'); }
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>
