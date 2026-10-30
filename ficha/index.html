@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F3A5F">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ficha Anest">
+<title>Ficha Anestésica</title>
+<style>
+:root{--navy:#1F3A5F;--light:#E8EEF5;--fbg:#F6F8FB;--grid:#9AA8B8;--gridl:#D5DCE4;--grey:#6B7A8C;--acc:#E07A1F}
+*{box-sizing:border-box}
+html,body{margin:0;background:#C9D2DC;font-family:Helvetica,Arial,sans-serif;color:#000;-webkit-text-size-adjust:100%}
+/* ---------- barra de ferramentas ---------- */
+#bar{position:sticky;top:0;z-index:50;background:var(--navy);color:#fff;display:flex;align-items:center;gap:8px;padding:8px 12px;flex-wrap:wrap;box-shadow:0 2px 8px #0003}
+#bar .tt{font-weight:700;font-size:15px;margin-right:auto}
+#bar button,.gbtn{font:600 14px Helvetica,Arial;border:0;border-radius:8px;padding:9px 14px;cursor:pointer}
+.b1{background:var(--acc);color:#fff}.b2{background:#ffffff22;color:#fff}
+#nav{display:flex;gap:4px}
+#nav a{color:#fff;text-decoration:none;font-size:13px;padding:7px 10px;border-radius:7px;background:#ffffff18}
+#saved{font-size:11px;opacity:.7}
+/* ---------- páginas ---------- */
+#wrap{overflow:hidden}
+#doc{padding:14px 0 40px;transform-origin:top center}
+.page{width:210mm;height:297mm;margin:0 auto 18px;background:#fff;position:relative;overflow:hidden;box-shadow:0 2px 14px #0003;padding:70px 35px 34px;font-size:9.6px}
+.hdr{position:absolute;left:0;top:0;right:0;height:61px;background:var(--navy);color:#fff;padding:0 35px}
+.hdr h1{margin:0;position:absolute;top:17px;font-size:14px;letter-spacing:.2px}
+.hdr .sub{position:absolute;top:39px;font-size:9.8px;color:#C9D6E6}
+.hdr .et{position:absolute;right:35px;top:10px;width:167px;font-size:8.6px;color:#C9D6E6}
+.hdr .et input{width:100%;margin-top:3px;height:17px;background:#fff}
+.foot{position:absolute;left:35px;right:35px;bottom:12px;border-top:.8px solid var(--gridl);padding-top:4px;font-size:8px;color:var(--grey);display:flex;justify-content:space-between}
+.sec{background:var(--navy);color:#fff;font-weight:700;font-size:10.4px;border-radius:3px;padding:3px 8px;margin:9px 0 6px;text-transform:uppercase;letter-spacing:.2px}
+.sec:first-child{margin-top:0}
+.ln{display:flex;align-items:center;gap:10px;margin:4px 0;min-height:17px;flex-wrap:nowrap}
+.f{display:flex;align-items:center;gap:4px;min-width:0}
+.f>label{white-space:nowrap}
+.i,textarea{height:17px;border:.8px solid var(--grid);background:var(--fbg);border-radius:1px;font:10px Helvetica,Arial;padding:0 3px;min-width:16px;width:100%;color:#000;-webkit-appearance:none;outline:none}
+.i:focus,textarea:focus{border-color:var(--acc);background:#FFF8F0}
+textarea{resize:none;padding:2px 3px;line-height:1.25;display:block}
+.f.col{flex-direction:column;align-items:stretch;gap:2px}
+b.lb{white-space:nowrap}
+/* checkbox */
+.cg{display:flex;align-items:center;gap:9px;flex:none;white-space:nowrap}
+.c{display:inline-flex;align-items:center;gap:3px;cursor:pointer;user-select:none;-webkit-user-select:none;padding:2px 0}
+.c i{width:11px;height:11px;border:.8px solid var(--grid);background:#fff;display:inline-block;position:relative;flex:none}
+.c.on i{background:#fff;border-color:#000}
+.c.on i::after{content:"";position:absolute;left:3px;top:0;width:3px;height:7px;border:solid #000;border-width:0 1.6px 1.6px 0;transform:rotate(45deg)}
+.comg{display:grid;grid-template-columns:repeat(5,1fr);row-gap:2px;margin:3px 0 4px}
+.now{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:3px;background:var(--light);border:0;font-size:10px;cursor:pointer;flex:none;padding:0;color:var(--navy)}
+/* assinatura */
+.sig{display:flex;align-items:flex-end;gap:10px;margin-top:14px}
+.sig .line{flex:1;border-bottom:.8px dashed var(--grid);height:17px;position:relative}
+.sig .line span{position:absolute;bottom:-11px;left:0;font-size:7.6px;color:var(--grey)}
+/* tabelas */
+table.t{border-collapse:collapse;width:100%;font-size:8.8px}
+table.t th{background:var(--light);text-align:left;padding:2px 3px;border:.6px solid var(--grid);font-size:8.6px}
+table.t td{border:.6px solid var(--grid);border-top-color:var(--gridl);padding:1.5px 2px}
+table.t td .i{height:14px;font-size:9px}
+table.t td.lab{font-weight:700;padding-left:4px;white-space:nowrap}
+.two{display:flex;gap:10px}.two>*{flex:1}
+.ref td{padding:2px 4px}
+.small{font-size:8.4px;color:#222;margin-top:3px;line-height:1.3}
+.muted{color:var(--grey)}
+/* gráfico */
+.gtool{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin:0 0 5px}
+.gtool button{font:600 10px Helvetica,Arial;border:.8px solid var(--grid);background:#fff;border-radius:5px;padding:4px 7px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.gtool button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.gtool button.on svg *{stroke:#fff;fill:#fff}
+#readout{font-size:10px;font-weight:700;color:var(--acc);margin-left:auto;min-width:90px;text-align:right}
+.gr{display:grid;grid-template-columns:78px repeat(12,1fr);gap:0;align-items:center;margin:2px 0}
+.gr>label{font-weight:700;font-size:8.6px}
+.gr .i{height:15px;font-size:9px;width:calc(100% - 3px);margin-left:1.5px;text-align:center}
+#graph{display:block;touch-action:manipulation}
+#graph.pen{touch-action:none}
+.inf{display:grid;grid-template-columns:78px 1fr;align-items:center;margin:2px 0}
+.inf .i{height:14px;font-size:8.5px;width:72px}
+.inf svg{display:block;touch-action:manipulation;cursor:crosshair}
+/* modal */
+#modal{position:fixed;inset:0;background:#0006;display:none;align-items:center;justify-content:center;z-index:99}
+#modal .box{background:#fff;border-radius:12px;padding:20px;max-width:380px;font-size:15px;line-height:1.4}
+#modal .box div{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+#modal .b2{background:#E8EEF5;color:#1F3A5F}
+/* impressão */
+@page{size:A4;margin:0}
+@media print{
+  html,body{background:#fff}
+  #bar,#modal,.gtool,.now,.noprint{display:none!important}
+  #wrap{height:auto!important;overflow:visible}
+  #doc{padding:0;transform:none!important}
+  .page{margin:0;box-shadow:none;break-after:page;page-break-after:always}
+  .page:last-child{break-after:auto;page-break-after:auto}
+  .i,textarea,.hdr .et input{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .hdr,.sec,table.t th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .i:focus,textarea:focus{border-color:var(--grid);background:var(--fbg)}
+}
+</style>
+</head>
+<body>
+<div id="bar">
+  <span class="tt">Ficha Anestésica</span>
+  <nav id="nav"><a href="#p1">Pré</a><a href="#p2">Intra</a><a href="#p3">Gráfico</a><a href="#p4">SRPA</a></nav>
+  <span id="saved"></span>
+  <button class="b2" id="bNova">Nova ficha</button>
+  <button class="b1" id="bPrint">Gerar PDF / Imprimir</button>
+</div>
+<div id="wrap"><div id="doc"></div></div>
+<div id="modal"><div class="box"><span id="mtxt"></span><div><button class="gbtn b2" id="mNo">Cancelar</button><button class="gbtn b1" id="mYes">OK</button></div></div></div>
+
+<datalist id="dl_farm">
+<option>Propofol</option><option>Fentanil</option><option>Sufentanil</option><option>Remifentanil</option><option>Alfentanil</option><option>Morfina</option><option>Metadona</option><option>Cetamina</option><option>Escetamina</option><option>Etomidato</option><option>Midazolam</option><option>Dexmedetomidina</option><option>Rocurônio</option><option>Cisatracúrio</option><option>Atracúrio</option><option>Succinilcolina</option><option>Sugamadex</option><option>Neostigmina</option><option>Atropina</option><option>Lidocaína</option><option>Bupivacaína</option><option>Bupivacaína pesada</option><option>Levobupivacaína</option><option>Ropivacaína</option><option>Dexametasona</option><option>Ondansetrona</option><option>Dipirona</option><option>Paracetamol</option><option>Cetoprofeno</option><option>Parecoxibe</option><option>Tramadol</option><option>Sulfato de magnésio</option><option>Cefazolina</option><option>Clindamicina</option><option>Ácido tranexâmico</option><option>Efedrina</option><option>Metaraminol</option><option>Fenilefrina</option><option>Noradrenalina</option><option>Adrenalina</option><option>Vasopressina</option><option>Dobutamina</option><option>Esmolol</option><option>Metoprolol</option><option>Nitroglicerina</option><option>Nitroprussiato</option><option>Furosemida</option><option>Heparina</option><option>Protamina</option><option>Insulina regular</option><option>Gluconato de cálcio</option><option>Bicarbonato de sódio</option><option>Hidrocortisona</option><option>Omeprazol</option><option>Metoclopramida</option><option>Droperidol</option><option>Clonidina</option>
+</datalist>
+<datalist id="dl_via"><option>EV</option><option>IM</option><option>SC</option><option>VO</option><option>IT</option><option>PD</option><option>Perineural</option><option>Inalatória</option><option>Tópica</option></datalist>
+
+<script>
+"use strict";
+const CRM = "Dr. Lucas Caetano - CRM-SP 257008";
+const VER = "FICHA-ANEST · v1.0 · out/2026";
+/* ---------------- construtores ---------------- */
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const slug = s => s.normalize("NFD").replace(/[^\w]/g,"").slice(0,16);
+function F(label, id, w=1, o={}){
+  const st = o.px ? `flex:0 0 ${o.px}px` : `flex:${w} 1 0`;
+  const now = o.t ? `<button class="now" data-now="${id}" title="Agora">⏱</button>` : "";
+  const list = o.list ? ` list="${o.list}"` : "";
+  const val = o.v ? ` data-def="${esc(o.v)}"` : "";
+  const cls = (o.t?"t ":"") + (o.cls||"");
+  return `<div class="f" style="${st}">${label?`<label for="${id}">${label}</label>`:""}<input class="i ${cls}" id="${id}" autocomplete="off"${list}${val}${o.num?' inputmode="decimal"':""}>${now}</div>`;
+}
+function TA(label, id, h=28, w=1){
+  return `<div class="f ${label.length>40?'col':''}" style="flex:${w} 1 0;align-items:${label.length>40?'stretch':'flex-start'}">${label?`<label for="${id}" style="padding-top:3px">${label}</label>`:""}<textarea id="${id}" style="height:${h}px"></textarea></div>`;
+}
+function C(label, id, opts, single=true){
+  return `<div class="cg">${label?`<b class="lb">${label}</b>`:""}${opts.map((o,i)=>`<span class="c" data-id="${id}_${i}" data-g="${single?id:""}"><i></i>${o}</span>`).join("")}</div>`;
+}
+const L = (...p) => `<div class="ln">${p.join("")}</div>`;
+const S = t => `<div class="sec">${t}</div>`;
+const SP = `<div style="flex:1"></div>`;
+function page(n, sub, body){
+  return `<section class="page" id="p${n}"><div class="hdr"><h1>FICHA ANESTÉSICA</h1><div class="sub">${sub}</div>
+  <div class="et">Etiqueta / Prontuário<input class="i et-sync" id="hdr_pront_${n}" autocomplete="off"></div></div>
+  ${body}<div class="foot"><span>${VER}</span><span>Página ${n} de 4</span></div></section>`;
+}
+function sign(label, id){
+  return `<div class="sig"><b class="lb" style="padding-bottom:3px">${label}:</b>${F("", id+"_nome", 0, {px:235, v:CRM})}
+  <div class="line"><span>Assinatura</span></div>${F("Data:", id+"_data", 0, {px:120})}</div>`;
+}
+function drugTable(prefix, n){
+  let r = "";
+  for(let k=0;k<n;k++) r += `<tr><td style="width:17%"><input class="i t" id="${prefix}_h${k}"></td><td style="width:45%"><input class="i" list="dl_farm" id="${prefix}_f${k}"></td><td style="width:22%"><input class="i" id="${prefix}_d${k}"></td><td><input class="i" list="dl_via" id="${prefix}_v${k}"></td></tr>`;
+  return `<table class="t"><tr><th>Hora</th><th>Fármaco</th><th>Dose</th><th>Via</th></tr>${r}</table>`;
+}
+
+/* ---------------- PÁGINA 1 ---------------- */
+const COM = ["HAS","Diabetes","DAC / IAM prévio","Insuf. cardíaca","Arritmia / MP / CDI","Valvopatia","AVC / AIT","Asma / DPOC","SAOS / ronco","DRC / diálise","Hepatopatia","Tireoidopatia","Coagulopatia","Anticoag. / antiagreg.","DRGE","Gestação","Tabagismo","Etilismo","Outras drogas","Obesidade"];
+const p1 = page(1,"Avaliação pré-anestésica · Resolução CFM nº 2.174/2017, Anexo I",
+  S("Identificação") +
+  L(F("Nome:","pre_nome",3.2), F("Idade:","pre_idade",.55,{num:1}), F("Data nasc.:","pre_dn",.95)) +
+  L(C("Sexo:","pre_sexo",["M","F"]), F("Peso (kg):","pre_peso",1,{num:1}), F("Altura (cm):","pre_alt",1,{num:1}), F("IMC:","pre_imc",.8), F("Setor / leito:","pre_setor",1.6)) +
+  L(F("Procedimento proposto:","pre_proc",3), F("Data:","pre_data",.8)) +
+  L(F("Cirurgião:","pre_cir",1), C("Caráter:","pre_car",["Eletivo","Urgência","Emergência"])) +
+  S("Antecedentes") +
+  `<div class="comg">${COM.map((o,i)=>`<span class="c" data-id="com_${i}" data-g=""><i></i>${o}</span>`).join("")}</div>` +
+  L(TA("Detalhes / outras:","com_outras",40)) +
+  L(TA("Medicações em uso:","pre_meds",52)) +
+  L(C("Alergias:","alerg",["Nega","Sim:"]), F("","alerg_txt",1)) +
+  L(F("Cirurgias / anestesias prévias e intercorrências:","pre_prev",1)) +
+  L(C("Hist. familiar (HM, intercorrência anestésica):","fam",["Nega","Sim:"]), F("","fam_txt",1)) +
+  L(C("Capacidade funcional:","mets",["4 METs ou mais","Menos de 4 METs","Não avaliável"])) +
+  S("Exame físico e via aérea") +
+  L(F("PA:","ef_pa",1.2), F("FC:","ef_fc",.8,{num:1}), F("FR:","ef_fr",.8,{num:1}), F("SpO2:","ef_spo2",.8,{num:1}), F("Tax:","ef_tax",.8,{num:1})) +
+  L(TA("ACV / AR / outros:","ef_ex",30)) +
+  L(C("Mallampati:","mall",["I","II","III","IV"]), C("Abertura bucal:","abert",["3 cm ou mais","Menos de 3 cm"]), C("DTM:","dtm",["6,5 cm ou mais","Menor"])) +
+  L(C("Mobilidade cervical:","cerv",["Normal","Reduzida"]), C("Dentição:","dent",["Própria","Prótese","Dentes frágeis / móveis","Barba"],false)) +
+  L(C("Preditores de VA difícil:","vad",["Não","Sim"]), F("STOP-Bang:","stopbang",0,{px:90}), F("Observações VA:","va_obs",1)) +
+  S("Exames complementares e jejum") +
+  `<div class="ln" style="gap:6px">${[["Hb","hb"],["Ht","ht"],["Plaq","plaq",1.15],["INR","inr"],["TTPa","ttpa"],["Cr","cr"],["Na","na",.9],["K","k",.9],["Glic","glic"]].map(a=>F(a[0]+":","lab_"+a[1],a[2]||1)).join("")}</div>` +
+  L(TA("ECG / RX / Eco / outros:","lab_out",30)) +
+  L(F("Jejum sólidos desde:","jej_sol",1,{t:1}), F("Líquidos claros desde:","jej_liq",1,{t:1})) +
+  S("Classificação de risco e plano anestésico") +
+  L(C("ASA:","asa",["I","II","III","IV","V","VI"]), C("","asaE",["E"],false), F("RCRI (Lee) / outros escores:","rcri",1)) +
+  L(F("Técnica anestésica planejada:","plano_tec",1)) +
+  L(C("Reserva de hemocomponentes:","reserva",["Não","Sim"]), C("Vaga de UTI:","uti",["Não","Sim"]), F("Analgesia pós-op.:","plano_analg",1)) +
+  L(TA("Pré-medicação e orientações (manter / suspender medicações):","plano_or",58)) +
+  L(C("","tcle",["TCLE para anestesia aplicado e assinado"],false)) +
+  sign("Anestesiologista","sig1")
+);
+
+/* ---------------- PÁGINA 2 ---------------- */
+const p2 = page(2,"Registro intraoperatório · Resolução CFM nº 2.174/2017, Anexo II",
+  S("Identificação e equipe") +
+  L(F("Paciente:","io_nome",3), F("Data:","io_data",.8), F("Sala:","io_sala",.5)) +
+  L(F("Cirurgia realizada:","io_cir",2.4), F("Cirurgião:","io_cirurgiao",1.5)) +
+  L(F("Anestesiologista(s):","io_anest",1.6,{v:CRM}), F("Residente / auxiliar:","io_resid",1.3)) +
+  `<div class="ln" style="gap:5px">${[["Entrada sala","t_ent"],["Início anest.","t_ia"],["Início cir.","t_ic"],["Fim cir.","t_fc"],["Fim anest.","t_fa"],["Saída sala","t_sai"]].map(a=>F(a[0]+":",a[1],1,{t:1})).join("")}</div>` +
+  S("Segurança, monitorização e acessos") +
+  L(C("","seg",["Checklist cirurgia segura (pausa)","Aparelho de anestesia testado","Aspirador funcionante","Material de VA / VAD disponível","Jejum e alergias confirmados"],false)) +
+  L(C("Monitorização:","mon",["ECG","PNI","SpO2","EtCO2","Temperatura","BIS / entropia","TOF","PAI","PVC","Diurese","Gases anest."],false)) +
+  L(F("Acesso venoso periférico (calibre / local):","ac_per",2.2), F("Central (sítio):","ac_cvc",1), F("Arterial:","ac_art",1)) +
+  L(C("Posição:","pos",["DDH","DL","DV","Litotomia","Cadeira de praia","Trendelenburg"]), C("","prot",["Proteção ocular","Pontos de pressão protegidos"],false)) +
+  L(F("ATB profilaxia (fármaco / hora):","atb",1)) +
+  S("Anestesia geral") +
+  L(C("Indução:","ind",["Venosa","Inalatória"]), C("","indx",["Sequência rápida","Pré-oxigenação"],false), C("Manutenção:","manut",["Balanceada","Venosa total","Inalatória"])) +
+  L(C("Ventilação sob máscara:","vmasc",["Fácil","Difícil (2 mãos / cânula)","Impossível","Não realizada"])) +
+  L(C("Dispositivo:","dva",["Máscara laríngea","TOT","Aramado","Nasal","Outro"]), F("Nº:","dva_n",.6), F("Fixação (cm):","dva_fix",1), F("Cuff:","dva_cuff",.8)) +
+  L(C("Laringoscopia:","lar",["Direta","Videolaringoscopia","Fibroscopia"]), C("","bougie",["Bougie"],false), C("Cormack-Lehane:","cl",["I","IIa","IIb","III","IV"]), F("Tentativas:","lar_tent",1)) +
+  L(C("Ventilação:","vent",["VCV","PCV","PSV","Espontânea"]), F("VC:","v_vc",1), F("FR:","v_fr",1), F("PEEP:","v_peep",1), F("FiO2:","v_fio2",1), F("Ppico:","v_pp",1)) +
+  L(C("Reversão BNM:","rev",["Neostigmina + atropina","Sugamadex","Não utilizada"]), F("TOF final:","tof_fin",1)) +
+  L(C("","extub",["Extubado em sala","Mantido intubado"]), C("","extub2",["Extubação acordado","Extubação em plano profundo"])) +
+  S("Anestesia neuroaxial") +
+  L(C("Técnica:","nx",["Raquianestesia","Peridural","Combinada"]), C("","nxcat",["Cateter peridural"],false), C("Posição:","nxpos",["Sentado","Decúbito lateral"])) +
+  L(F("Espaço:","nx_niv",.9), F("Agulha (tipo / G):","nx_ag",1.5), F("Tentativas:","nx_tent",.8), F("Nível sensitivo:","nx_sens",1)) +
+  L(F("Fármacos e doses:","nx_farm",1)) +
+  L(F("Intercorrências da punção (parestesia, sangue, punção dural acidental):","nx_int",1)) +
+  S("Bloqueio periférico e sedação") +
+  L(F("Bloqueio(s) realizado(s) / lado:","bp_tipo",1), C("","bpg",["USG","Neuroestimulador","Cateter"],false)) +
+  L(F("Agulha:","bp_ag",1), F("Fármaco / concentração / volume:","bp_farm",3)) +
+  L(C("Sedação — nível:","sed",["Mínima","Moderada","Profunda"]), F("O2 suplementar (dispositivo / fluxo):","sed_o2",1)) +
+  S("Observações / descrição da anestesia") +
+  `<textarea id="io_obs" style="height:205px"></textarea>`
+);
+
+/* ---------------- PÁGINA 3 ---------------- */
+const NCOL = 36, GUT = 78, GW = 724 - GUT, CW = GW / NCOL, NROW = 22, RH = 11.4, GH = NROW * RH, GT = 6;
+function gridSVG(){
+  let s = `<svg id="graph" width="724" height="${GH+GT+6}" viewBox="0 0 724 ${GH+GT+6}" xmlns="http://www.w3.org/2000/svg">`;
+  s += `<text x="0" y="${GT+12}" font-size="8.4" font-weight="700">PA (mmHg)</text><text x="0" y="${GT+23}" font-size="8.4" font-weight="700">FC (bpm)</text><text x="0" y="${GT+40}" font-size="8" fill="#6B7A8C">Eventos:</text>`;
+  for(let i=0;i<=NROW;i++){
+    const y = GT + i*RH, v = (NROW-i)*10;
+    s += `<line x1="${GUT}" x2="724" y1="${y}" y2="${y}" stroke="${v%20===0?'#9AA8B8':'#D5DCE4'}" stroke-width="${v%20===0?.6:.4}"/>`;
+    if(v%20===0) s += `<text x="${GUT-4}" y="${y+2.8}" font-size="7.6" fill="#6B7A8C" text-anchor="end">${v}</text>`;
+  }
+  for(let j=0;j<=NCOL;j++){
+    const x = GUT + j*CW;
+    s += `<line x1="${x}" x2="${x}" y1="${GT}" y2="${GT+GH}" stroke="${j%3===0?'#9AA8B8':'#D5DCE4'}" stroke-width="${j%3===0?.8:.4}"/>`;
+  }
+  return s + `<g id="marks"></g><path id="penLive" fill="none" stroke="#000" stroke-width="1.2"/></svg>`;
+}
+const SYM = {
+  pas:(x,y)=>`<path d="M${x-4} ${y-6} L${x} ${y} L${x+4} ${y-6}" fill="none" stroke="#000" stroke-width="1.3"/>`,
+  pad:(x,y)=>`<path d="M${x-4} ${y+6} L${x} ${y} L${x+4} ${y+6}" fill="none" stroke="#000" stroke-width="1.3"/>`,
+  fc:(x,y)=>`<circle cx="${x}" cy="${y}" r="2.6" fill="#000"/>`,
+  an:(x,y)=>`<path d="M${x-4} ${y-4} L${x+4} ${y+4} M${x-4} ${y+4} L${x+4} ${y-4}" stroke="#000" stroke-width="1.3"/>`,
+  ci:(x,y)=>`<rect x="${x-4}" y="${y-4}" width="8" height="8" fill="none" stroke="#000" stroke-width="1.2"/>`
+};
+const legend = [["pas","PAS"],["pad","PAD"],["fc","FC"],["an","Início/fim anestesia"],["ci","Início/fim cirurgia"]];
+const icon = k => `<svg width="12" height="12" viewBox="-6 -6 12 12">${SYM[k](0,k==="pas"?3:k==="pad"?-3:0)}</svg>`;
+function gRow(label, key){
+  let s = `<div class="gr"><label>${label}</label>`;
+  for(let b=0;b<12;b++) s += `<input class="i${key==='hora'?' t':''}" id="g_${key}_${b}" autocomplete="off" ${key==='hora'?'':'inputmode="decimal"'}>`;
+  return s + `</div>`;
+}
+let infRows = "";
+for(let k=0;k<3;k++){
+  infRows += `<div class="inf"><input class="i" id="g_inf_${k}" placeholder="infusão" list="dl_farm"><svg class="infsvg" data-row="${k}" width="${GW}" height="15" viewBox="0 0 ${GW} 15"><rect x="0" y="0.5" width="${GW}" height="14" fill="#fff" stroke="#D5DCE4" stroke-width=".5"/>${Array.from({length:13},(_,j)=>`<line x1="${j*3*CW}" x2="${j*3*CW}" y1="0" y2="15" stroke="#D5DCE4" stroke-width=".5"/>`).join("")}<g class="infg"></g></svg></div>`;
+}
+const p3 = page(3,"Registro intraoperatório (continuação) · sinais vitais, fármacos e balanço",
+  S("Sinais vitais") +
+  `<div class="gtool">${legend.map(([k,t])=>`<button data-mode="${k}"${k==="pas"?' class="on"':""}>${icon(k)}${t}</button>`).join("")}
+   <button data-mode="pen">✎ Caneta</button><button data-mode="erase">⌫ Apagar</button><button id="gUndo">↶ Desfazer</button><span id="readout"></span></div>` +
+  gRow("Hora","hora") +
+  `<div class="ln muted" style="margin:1px 0 2px;font-size:8px;gap:14px"><span style="width:68px"></span>${legend.map(([k,t])=>`<span style="display:inline-flex;gap:3px;align-items:center">${icon(k)}${t}</span>`).join("")}<span>Colunas de 5 min; linha forte a cada 15 min</span></div>` +
+  gridSVG() +
+  gRow("SpO2 (%)","spo2") + gRow("EtCO2 (mmHg)","etco2") + gRow("Temp. (°C)","temp") + gRow("FiO2 / agente (%)","fio2") + gRow("BIS / TOF","bis") + gRow("Diurese (mL)","diur") +
+  infRows +
+  `<div class="small muted">Infusões: nome à esquerda; toque no início e depois no fim para traçar a duração. Acima de 3 h, use folha adicional.</div>` +
+  S("Fármacos administrados") +
+  `<div class="two">${drugTable("fa",10)}${drugTable("fb",10)}</div>` +
+  S("Balanço hídrico e hemocomponentes") +
+  L(F("Cristaloides (mL):","bh_cr",1,{num:1}), F("Coloides (mL):","bh_co",1,{num:1}), F("Concentrado de hemácias:","bh_ch",1.1)) +
+  L(F("Plasma / plaquetas / crio:","bh_pl",1.2), F("Cell saver (mL):","bh_cs",.9,{num:1}), F("Outros:","bh_out",1)) +
+  L(F("Perda sanguínea estimada:","bh_perda",1.2), F("Diurese total:","bh_diur",.9), F("Balanço:","bh_tot",1)) +
+  S("Intercorrências e eventos adversos") +
+  `<textarea id="io_int" style="height:34px"></textarea>` +
+  L(C("","ea_notif",["Evento adverso notificado"],false)) +
+  L(C("Destino:","dest",["SRPA","UTI","Enfermaria","Alta (ambulatorial)"]), C("Transporte:","transp",["O2","Monitor","Acompanhado pelo anestesiologista"],false)) +
+  sign("Anestesiologista responsável","sig3")
+);
+
+/* ---------------- PÁGINA 4 ---------------- */
+const TIMES = ["Admissão","15 min","30 min","45 min","60 min","90 min","Alta"];
+const RROWS = ["Horário","PA (mmHg)","FC (bpm)","SpO2 (%)","FR (irpm)","Temp. (°C)","Dor — EVA (0-10)","Náusea / vômito (S/N)","Tremores (S/N)","Aldrete — Atividade","Aldrete — Respiração","Aldrete — Circulação","Aldrete — Consciência","Aldrete — SpO2","ALDRETE — TOTAL (0-10)","Bromage (0-3)"];
+const rpaTable = `<table class="t"><tr><th style="width:150px">Parâmetro</th>${TIMES.map(t=>`<th>${t}</th>`).join("")}</tr>${RROWS.map((r,i)=>`<tr><td class="lab">${r}</td>${TIMES.map((_,j)=>`<td><input class="i${i===0?' t':''}${i>=9&&i<=13?' ald':''}" data-col="${j}" id="rpa_${i}_${j}" ${i>0&&i!==7&&i!==8?'inputmode="decimal"':''}></td>`).join("")}</tr>`).join("")}</table>`;
+const AL = [["Atividade","Move os 4 membros","Move 2 membros","Não move os membros"],["Respiração","Respira profundamente e tosse","Dispneia ou respiração limitada","Apneia"],["Circulação","PA ± 20% do pré-anestésico","PA ± 20–49% do pré-anestésico","PA ± 50% ou mais do pré-anestésico"],["Consciência","Totalmente acordado","Desperta ao chamado","Não responde"],["SpO2","Acima de 92% em ar ambiente","Necessita O2 para manter acima de 90%","Abaixo de 90% mesmo com O2"]];
+const refTable = `<table class="t ref"><tr><th style="width:14%">Critério</th><th>2 pontos</th><th>1 ponto</th><th>0 ponto</th></tr>${AL.map(r=>`<tr>${r.map((v,k)=>k?`<td>${v}</td>`:`<td class="lab">${v}</td>`).join("")}</tr>`).join("")}</table>`;
+const CRIT = ["Aldrete 9 ou mais","Dor controlada (EVA 3 ou menos)","Sem náusea / vômito relevantes","Estabilidade hemodinâmica","Sem sangramento ativo","Temperatura 36 °C ou mais","Bromage 1 ou menos (pós-neuroaxial)","Ambulatorial: acompanhante adulto e orientações por escrito"];
+const p4 = page(4,"Recuperação pós-anestésica · Resolução CFM nº 2.174/2017, Anexo III",
+  S("Admissão na SRPA") +
+  L(F("Paciente:","rpa_nome",3), F("Data:","rpa_data",.8), F("Hora de entrada:","rpa_hora",1,{t:1})) +
+  L(F("Anestesiologista que transferiu:","rpa_transf",1,{v:CRM}), F("Médico responsável na SRPA:","rpa_resp",1)) +
+  L(C("Na admissão:","rpa_adm",["Passagem de caso realizada","O2 suplementar","Via aérea pérvia","Dispositivo de VA"],false)) +
+  S("Avaliação seriada") + rpaTable +
+  S("Referência: índice de Aldrete-Kroulik modificado e escala de Bromage") + refTable +
+  `<div class="small"><b>Bromage:</b> 0 = sem bloqueio motor (flete quadril, joelho e tornozelo) · 1 = não eleva a perna estendida, flete o joelho · 2 = não flete o joelho, move o pé · 3 = bloqueio motor completo.</div>` +
+  S("Medicações e intercorrências na SRPA") +
+  `<div class="two">${drugTable("ra",5)}${drugTable("rb",5)}</div>` +
+  `<div style="margin-top:5px">${L(TA("Intercorrências:","rpa_int",30))}</div>` +
+  S("Critérios de alta e destino") +
+  `<div class="comg" style="grid-template-columns:repeat(3,1fr)">${CRIT.map((o,i)=>`<span class="c" data-id="alta_${i}" data-g=""${i===7?' style="grid-column:span 2"':""}><i></i>${o}</span>`).join("")}</div>` +
+  L(C("Destino:","rpa_dest",["Enfermaria","UTI","Domicílio"]), F("Hora da alta:","rpa_alta",0,{px:140,t:1})) +
+  sign("Médico responsável pela alta","sig4")
+);
+document.getElementById("doc").innerHTML = p1 + p2 + p3 + p4;
+
+/* ---------------- estado / autosave ---------------- */
+const KEY = "fichaAnest_v1";
+let marks = [];         // {k,x,y} | {k:'pen',d} | {k:'inf',row,x1,x2}
+let infPending = {};
+const $ = id => document.getElementById(id);
+function collect(){
+  const st = {v:{}, c:[], marks};
+  document.querySelectorAll(".i,textarea").forEach(e=>{ if(e.value) st.v[e.id]=e.value; });
+  document.querySelectorAll(".c.on").forEach(e=>st.c.push(e.dataset.id));
+  return st;
+}
+let tSave;
+function save(){
+  clearTimeout(tSave);
+  tSave = setTimeout(()=>{
+    try{ sessionStorage.setItem(KEY, JSON.stringify(collect())); $("saved").textContent="Rascunho protegido (até fechar o app) "+new Date().toTimeString().slice(0,5); }
+    catch(e){ $("saved").textContent=""; }
+  },400);
+}
+function applyDefaults(){
+  document.querySelectorAll("[data-def]").forEach(e=>{ if(!e.value) e.value=e.dataset.def; });
+}
+function load(){
+  let st=null;
+  try{ st = JSON.parse(sessionStorage.getItem(KEY)||"null"); }catch(e){}
+  if(st){
+    Object.entries(st.v||{}).forEach(([id,v])=>{ const e=$(id); if(e) e.value=v; });
+    (st.c||[]).forEach(id=>{ const e=document.querySelector(`.c[data-id="${id}"]`); if(e) e.classList.add("on"); });
+    marks = st.marks||[];
+  }
+  applyDefaults(); drawMarks(); autosize();
+}
+
+/* ---------------- checkboxes ---------------- */
+document.addEventListener("click", e=>{
+  const c = e.target.closest(".c"); if(!c) return;
+  const g = c.dataset.g;
+  const was = c.classList.contains("on");
+  if(g) document.querySelectorAll(`.c[data-g="${g}"]`).forEach(x=>x.classList.remove("on"));
+  c.classList.toggle("on", !was);
+  save();
+});
+
+/* ---------------- botão "agora" ---------------- */
+const hhmm = () => new Date().toTimeString().slice(0,5);
+document.addEventListener("click", e=>{
+  const b = e.target.closest(".now"); if(!b) return;
+  const inp = $(b.dataset.now); inp.value = hhmm(); inp.dispatchEvent(new Event("input",{bubbles:true}));
+});
+
+/* ---------------- automações ---------------- */
+const num = v => parseFloat(String(v).replace(",", "."));
+function autosize(){ document.querySelectorAll("textarea").forEach(t=>{ t.style.overflow = t.scrollHeight>t.clientHeight+2?"auto":"hidden"; }); }
+function mirror(from, tos){
+  tos.forEach(id=>{ const t=$(id); if(!t.value || t.dataset.auto===t.value){ t.value=$(from).value; t.dataset.auto=t.value; } });
+}
+function addMin(h, m){
+  const r = /^(\d{1,2})[:h.]?(\d{2})$/.exec(h.trim()); if(!r) return null;
+  let t = (+r[1])*60 + (+r[2]) + m; t = ((t%1440)+1440)%1440;
+  return String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0");
+}
+document.addEventListener("input", e=>{
+  const id = e.target.id;
+  if(id==="pre_peso"||id==="pre_alt"){
+    const p=num($("pre_peso").value), a=num($("pre_alt").value), imc=$("pre_imc");
+    if(p>0&&a>0&&(!imc.value||imc.dataset.auto===imc.value)){ const a_ = a>3?a/100:a; imc.value=(p/(a_*a_)).toFixed(1); imc.dataset.auto=imc.value; }
+  }
+  if(id==="pre_dn"){
+    const r=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(e.target.value.trim()), ida=$("pre_idade");
+    if(r&&(!ida.value||ida.dataset.auto===ida.value)){
+      const d=new Date(+r[3],r[2]-1,+r[1]), n=new Date(); let y=n.getFullYear()-d.getFullYear();
+      if(n<new Date(n.getFullYear(),d.getMonth(),d.getDate())) y--;
+      if(y>=0&&y<130){ ida.value = y>=2 ? y+" anos" : Math.max(0,Math.floor((n-d)/2629800000))+" meses"; ida.dataset.auto=ida.value; }
+    }
+  }
+  if(id==="pre_nome") mirror("pre_nome",["io_nome","rpa_nome"]);
+  if(id==="pre_data") mirror("pre_data",["io_data","rpa_data"]);
+  if(e.target.classList.contains("et-sync")) document.querySelectorAll(".et-sync").forEach(x=>{ if(x!==e.target) x.value=e.target.value; });
+  if(id==="g_hora_0"){
+    for(let b=1;b<12;b++){ const t=$("g_hora_"+b); const v=addMin(e.target.value,15*b); if(v&&(!t.value||t.dataset.auto===t.value)){ t.value=v; t.dataset.auto=v; } }
+  }
+  if(e.target.classList.contains("ald")){
+    const j=e.target.dataset.col; let s=0, n=0;
+    for(let i=9;i<=13;i++){ const v=num($(`rpa_${i}_${j}`).value); if(!isNaN(v)){ s+=v; n++; } }
+    const tot=$(`rpa_14_${j}`); if(n&&(!tot.value||tot.dataset.auto===tot.value)){ tot.value=String(s); tot.dataset.auto=tot.value; }
+  }
+  if(["bh_cr","bh_co","bh_cs"].includes(id)){
+    const s=["bh_cr","bh_co"].reduce((a,k)=>a+(num($(k).value)||0),0);
+    const t=$("bh_tot"); if(s&&(!t.value||t.dataset.auto===t.value)){ t.value="Entradas: "+s+" mL"; t.dataset.auto=t.value; }
+  }
+  if(e.target.tagName==="TEXTAREA") autosize();
+  save();
+});
+
+/* ---------------- gráfico ---------------- */
+let mode = "pas";
+const graph = $("graph"), G = $("marks"), penLive = $("penLive");
+document.querySelectorAll(".gtool [data-mode]").forEach(b=>b.addEventListener("click",()=>{
+  mode=b.dataset.mode; document.querySelectorAll(".gtool [data-mode]").forEach(x=>x.classList.toggle("on",x===b));
+  graph.classList.toggle("pen", mode==="pen");
+}));
+function svgPt(svg, ev){
+  const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+  return {x:(ev.clientX-r.left)*vb.width/r.width, y:(ev.clientY-r.top)*vb.height/r.height};
+}
+const yToVal = y => Math.round((GT+GH-y)/RH*10);
+const valToY = v => GT+GH - v/10*RH;
+function drawMarks(){
+  let s="";
+  const inf = {0:"",1:"",2:""};
+  marks.forEach(m=>{
+    if(m.k==="pen") s+=`<path d="${m.d}" fill="none" stroke="#000" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    else if(m.k==="inf") inf[m.row]+=`<line x1="${m.x1}" x2="${m.x2}" y1="7.5" y2="7.5" stroke="#000" stroke-width="2"/><line x1="${m.x1}" x2="${m.x1}" y1="3" y2="12" stroke="#000" stroke-width="1.4"/><line x1="${m.x2}" x2="${m.x2}" y1="3" y2="12" stroke="#000" stroke-width="1.4"/>`;
+    else s+=SYM[m.k](m.x,m.y);
+  });
+  G.innerHTML=s;
+  document.querySelectorAll(".infsvg").forEach(sv=>{
+    const r=sv.dataset.row; let extra="";
+    if(infPending[r]!=null) extra=`<circle cx="${infPending[r]}" cy="7.5" r="3" fill="#E07A1F"/>`;
+    sv.querySelector(".infg").innerHTML=inf[r]+extra;
+  });
+}
+let penPts=null;
+graph.addEventListener("pointerdown", ev=>{
+  const p = svgPt(graph, ev);
+  if(p.x<GUT||p.y<GT-4||p.y>GT+GH+4) return;
+  if(mode==="pen"){ penPts=[[p.x,p.y]]; graph.setPointerCapture(ev.pointerId); ev.preventDefault(); return; }
+  if(mode==="erase"){
+    let best=-1, bd=14;
+    marks.forEach((m,i)=>{ if(m.k==="inf") return;
+      let d = m.k==="pen" ? Math.min(...m.d.match(/[\d.]+ [\d.]+/g).map(q=>{const [a,b]=q.split(" ").map(Number);return Math.hypot(a-p.x,b-p.y);})) : Math.hypot(m.x-p.x,m.y-p.y);
+      if(d<bd){bd=d;best=i;} });
+    if(best>=0){ marks.splice(best,1); drawMarks(); save(); }
+    return;
+  }
+  const col = Math.max(0,Math.min(NCOL-1,Math.floor((p.x-GUT)/CW)));
+  const x = +(GUT+(col+.5)*CW).toFixed(1);
+  const v = Math.max(0,Math.min(220,yToVal(p.y)));
+  const y = +valToY(v).toFixed(1);
+  marks.push({k:mode,x,y}); drawMarks(); save();
+  const nm={pas:"PAS",pad:"PAD",fc:"FC",an:"Anestesia",ci:"Cirurgia"}[mode];
+  const h0=$("g_hora_0").value; const tm = h0 ? addMin(h0, col*5) : `col ${col+1}`;
+  $("readout").textContent = (mode==="an"||mode==="ci") ? `${nm} · ${tm||""}` : `${nm} ${v} · ${tm||""}`;
+});
+graph.addEventListener("pointermove", ev=>{
+  if(!penPts) return;
+  const p=svgPt(graph,ev); penPts.push([p.x,p.y]);
+  penLive.setAttribute("d","M"+penPts.map(q=>q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" L"));
+});
+function penEnd(){
+  if(!penPts) return;
+  if(penPts.length>1) marks.push({k:"pen",d:"M"+penPts.map(q=>q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" L")});
+  penPts=null; penLive.setAttribute("d",""); drawMarks(); save();
+}
+graph.addEventListener("pointerup",penEnd); graph.addEventListener("pointercancel",penEnd);
+document.querySelectorAll(".infsvg").forEach(sv=>sv.addEventListener("pointerdown",ev=>{
+  const r=sv.dataset.row, p=svgPt(sv,ev);
+  const x=+(Math.round(p.x/CW)*CW).toFixed(1);
+  if(mode==="erase"){
+    const i=marks.findIndex(m=>m.k==="inf"&&m.row==r&&p.x>=m.x1-6&&p.x<=m.x2+6);
+    if(i>=0) marks.splice(i,1); infPending[r]=null; drawMarks(); save(); return;
+  }
+  if(infPending[r]==null){ infPending[r]=x; }
+  else { const a=Math.min(infPending[r],x), b=Math.max(infPending[r],x); if(b>a) marks.push({k:"inf",row:+r,x1:a,x2:b}); infPending[r]=null; save(); }
+  drawMarks();
+}));
+$("gUndo").addEventListener("click",()=>{ marks.pop(); drawMarks(); save(); });
+
+/* ---------------- zoom de tela ---------------- */
+function fit(){
+  const d = $("doc"), pw = document.querySelector(".page").offsetWidth;
+  const z = Math.min(1.5, (document.documentElement.clientWidth-16)/pw);
+  d.style.transform = `scale(${z})`;
+  $("wrap").style.height = (d.offsetHeight*z) + "px";
+}
+window.addEventListener("resize", fit);
+
+/* ---------------- nova ficha / imprimir ---------------- */
+function ask(txt, ok){ $("mtxt").textContent=txt; $("modal").style.display="flex"; $("mYes").onclick=()=>{ $("modal").style.display="none"; ok(); }; }
+$("mNo").onclick=()=>$("modal").style.display="none";
+$("bNova").onclick=()=>ask("Apagar todos os dados desta ficha e começar uma nova?",()=>{
+  document.querySelectorAll(".i,textarea").forEach(e=>{e.value="";delete e.dataset.auto;});
+  document.querySelectorAll(".c.on").forEach(e=>e.classList.remove("on"));
+  marks=[]; infPending={}; applyDefaults(); drawMarks(); $("readout").textContent="";
+  try{ sessionStorage.removeItem(KEY); }catch(e){}
+  $("saved").textContent=""; window.scrollTo(0,0);
+});
+$("bPrint").onclick=()=>{
+  if(document.activeElement) document.activeElement.blur();
+  const nome=($("pre_nome").value||$("io_nome").value||"").trim();
+  const data=($("io_data").value||$("pre_data").value||new Date().toLocaleDateString("pt-BR")).replace(/\//g,"-");
+  const old=document.title;
+  document.title = "Ficha Anestésica" + (nome?" - "+nome:"") + " - " + data;
+  try{ window.print(); }
+  catch(e){ ask("A impressão foi bloqueada nesta visualização. Abra a ficha no Safari para gerar o PDF.",()=>{}); }
+  setTimeout(()=>document.title=old,1500);
+};
+load(); fit();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>
