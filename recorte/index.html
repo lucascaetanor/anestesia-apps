@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#121212">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Recorte">
+<title>Recorte — remover fundo de prints</title>
+<style>
+:root{--bg:#121212;--panel:#1c1c1c;--line:#2e2e2e;--txt:#eaeaea;--mut:#9a9a9a;--acc:#ff7a1a;--acc2:#ffb27a;--red:#ff4d4d;--grn:#3ccf7a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);background:#0e0e0e}
+header h1{font-size:16px;margin:0;letter-spacing:.5px}
+header h1 b{color:var(--acc)}
+header small{color:var(--mut)}
+.main{flex:1;display:flex;min-height:0}
+aside{width:290px;flex-shrink:0;overflow:auto;padding:10px;border-right:1px solid var(--line);background:var(--panel)}
+.sec{margin-bottom:14px}
+.sec h3{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);margin:0 0 6px}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+button{background:#2a2a2a;color:var(--txt);border:1px solid #3a3a3a;border-radius:7px;padding:7px 10px;font:inherit;cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.on{background:var(--acc);border-color:var(--acc);color:#111;font-weight:600}
+button.big{width:100%;padding:9px}
+button.pri{background:var(--acc);color:#111;border-color:var(--acc);font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tools button{text-align:left}
+.pol{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pol button.on.keep{background:var(--grn);border-color:var(--grn)}
+.pol button.on.del{background:var(--red);border-color:var(--red);color:#fff}
+label{color:var(--mut);font-size:12px;display:flex;align-items:center;gap:6px}
+input[type=range]{flex:1;accent-color:var(--acc)}
+.val{min-width:34px;text-align:right;color:var(--txt);font-variant-numeric:tabular-nums}
+.hint{font-size:12px;color:var(--mut);background:#151515;border:1px solid var(--line);border-radius:7px;padding:7px 8px;margin-top:6px}
+.stage{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:14px;overflow:auto;position:relative}
+.wrap{position:relative;max-width:100%;max-height:100%;box-shadow:0 0 0 1px #333}
+.wrap.checker{background:repeating-conic-gradient(#cfcfcf 0 25%,#fff 0 50%) 0 0/18px 18px}
+.wrap.white{background:#fff}.wrap.black{background:#000}
+#cv,#ov{display:block;max-width:calc(100vw - 330px);max-height:calc(100vh - 110px)}
+#ov{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.empty{border:2px dashed #3a3a3a;border-radius:14px;padding:50px 40px;text-align:center;color:var(--mut);max-width:520px}
+.empty b{color:var(--txt)}
+.empty kbd{background:#2a2a2a;border:1px solid #444;border-radius:4px;padding:1px 6px;color:var(--txt)}
+#status{padding:6px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--mut);background:#0e0e0e;min-height:28px}
+#status.busy{color:var(--acc2)}
+#status.err{color:var(--red)}
+.hidden{display:none!important}
+@media (max-width:820px){
+ .main{flex-direction:column-reverse}
+ aside{width:auto;max-height:46vh;border-right:0;border-top:1px solid var(--line)}
+ #cv{max-width:calc(100vw - 30px);max-height:48vh}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><b>Recorte</b> · remover fundo de prints</h1>
+  <small>Powered by Lucas Caetano · tudo roda no seu navegador</small>
+</header>
+
+<div class="main">
+<aside>
+  <div class="sec">
+    <h3>Imagem</h3>
+    <div class="row">
+      <button id="bOpen">Abrir…</button>
+      <button id="bPaste">Colar</button>
+      <button id="bUndo" disabled title="Ctrl+Z">Desfazer</button>
+    </div>
+    <input type="file" id="file" accept="image/*" class="hidden">
+  </div>
+
+  <div class="sec">
+    <h3>Início rápido</h3>
+    <button class="big pri" id="bAuto" disabled>Remover fundo dominante</button>
+    <div class="row" style="margin-top:6px">
+      <label style="flex:1">Tolerância <input type="range" id="tol" min="1" max="100" value="18"><span class="val" id="tolV">18</span></label>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="contig" checked> Só o que encosta na borda</label>
+    </div>
+    <div class="row">
+      <button id="bClear" disabled>Apagar tudo</button>
+      <button id="bAll" disabled>Restaurar tudo</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Ferramenta</h3>
+    <div class="pol">
+      <button id="pKeep" class="keep">+ Manter</button>
+      <button id="pDel" class="del on">− Apagar</button>
+    </div>
+    <div class="tools" style="margin-top:6px">
+      <button data-t="wand" class="on">Varinha (cor)</button>
+      <button data-t="rect">Retângulo</button>
+      <button data-t="lasso">Laço</button>
+      <button data-t="brush">Pincel</button>
+      <button data-t="ai" style="grid-column:span 2">Clique IA (seleciona a figura)</button>
+    </div>
+    <div class="row" id="brushRow" style="margin-top:6px">
+      <label style="flex:1">Pincel <input type="range" id="bsize" min="2" max="120" value="24"><span class="val" id="bsizeV">24</span></label>
+    </div>
+    <div class="row hidden" id="aiRow" style="margin-top:6px">
+      <label>Seleção
+        <select id="aiGran" style="background:#2a2a2a;color:var(--txt);border:1px solid #3a3a3a;border-radius:6px;padding:4px">
+          <option value="auto">Automática</option>
+          <option value="big">Objeto inteiro</option>
+          <option value="small">Só a parte</option>
+        </select>
+      </label>
+    </div>
+    <div class="hint" id="toolHint"></div>
+  </div>
+
+  <div class="sec">
+    <h3>Limpeza</h3>
+    <div class="row">
+      <button id="bIslands" disabled title="Apaga pontinhos soltos que sobraram">Tirar sujeirinhas</button>
+      <button id="bHoles" disabled title="Restaura buracos fechados dentro das figuras">Fechar buracos</button>
+    </div>
+    <div class="row">
+      <button id="bAiAuto" disabled title="Modelo BRIA RMBG-1.4 (uso não comercial)">IA automática (foto)</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Visualização</h3>
+    <div class="row">
+      <button data-bg="checker" class="on">Xadrez</button>
+      <button data-bg="white">Branco</button>
+      <button data-bg="black">Preto</button>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="ghost" checked> Mostrar removido em transparência</label>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>Exportar</h3>
+    <div class="row">
+      <label><input type="checkbox" id="trim" checked> Cortar sobras transparentes</label>
+    </div>
+    <div class="row">
+      <label style="flex:1">Suavizar borda <input type="range" id="feather" min="0" max="4" value="1"><span class="val" id="featherV">1</span></label>
+    </div>
+    <div class="row">
+      <button class="pri" id="bCopy" disabled>Copiar PNG</button>
+      <button id="bSave" disabled>Baixar PNG</button>
+    </div>
+  </div>
+</aside>
+
+<div class="stage" id="stage">
+  <div class="empty" id="empty">
+    <p><b>Cole um print aqui</b> com <kbd>Ctrl</kbd>+<kbd>V</kbd><br>ou arraste a imagem / use “Abrir…”.</p>
+    <p style="font-size:12px">Fluxo típico em slide de videoaula:<br>
+    1) <b>Remover fundo dominante</b> e ajustar a tolerância<br>
+    2) <b>− Apagar</b> com Retângulo/Laço o que sobrou (ex.: o professor)<br>
+    3) <b>+ Manter</b> com Clique IA ou Retângulo o que sumiu sem querer<br>
+    4) <b>Copiar PNG</b> e colar no resumo</p>
+  </div>
+  <div class="wrap checker hidden" id="wrap">
+    <canvas id="cv"></canvas>
+    <canvas id="ov"></canvas>
+  </div>
+</div>
+</div>
+<div id="status">Pronto.</div>
+
+<script type="module">
+const $ = s => document.querySelector(s);
+const cv = $('#cv'), ctx = cv.getContext('2d');
+const ov = $('#ov'), octx = ov.getContext('2d');
+const statusEl = $('#status');
+
+let W = 0, H = 0;
+let src = null;          // Uint8ClampedArray RGBA original
+let mask = null;         // Uint8Array 0..255 (255 = manter)
+let srcCanvas = null, outCanvas = null, outCtx = null, outImg = null;
+let undo = [];
+let lastOp = null;       // {before, run} para reaplicar ao mudar tolerância
+let tool = 'wand', keepMode = false;
+let imgVersion = 0;
+
+function setStatus(msg, cls=''){ statusEl.textContent = msg; statusEl.className = cls; }
+
+/* ---------- carregar imagem ---------- */
+async function loadBlob(blob){
+  try{
+    const bmp = await createImageBitmap(blob);
+    W = bmp.width; H = bmp.height;
+    srcCanvas = document.createElement('canvas'); srcCanvas.width = W; srcCanvas.height = H;
+    const sctx = srcCanvas.getContext('2d', {willReadFrequently:true});
+    sctx.drawImage(bmp, 0, 0);
+    src = sctx.getImageData(0,0,W,H).data;
+    mask = new Uint8Array(W*H).fill(255);
+    outCanvas = document.createElement('canvas'); outCanvas.width = W; outCanvas.height = H;
+    outCtx = outCanvas.getContext('2d'); outImg = outCtx.createImageData(W,H);
+    outImg.data.set(src);
+    cv.width = ov.width = W; cv.height = ov.height = H;
+    undo = []; lastOp = null; imgVersion++; sam.embKey = -1;
+    $('#empty').classList.add('hidden'); $('#wrap').classList.remove('hidden');
+    document.querySelectorAll('#bAuto,#bClear,#bAll,#bIslands,#bHoles,#bAiAuto,#bCopy,#bSave').forEach(b=>b.disabled=false);
+    updUndo(); render();
+    setStatus(`Imagem ${W}×${H} carregada. Comece por “Remover fundo dominante”.`);
+  }catch(e){ setStatus('Não consegui abrir essa imagem.', 'err'); console.error(e); }
+}
+$('#bOpen').onclick = () => $('#file').click();
+$('#file').onchange = e => { const f = e.target.files[0]; if(f) loadBlob(f); e.target.value=''; };
+document.addEventListener('paste', e => {
+  const it = [...(e.clipboardData?.items||[])].find(i => i.type.startsWith('image/'));
+  if(it){ e.preventDefault(); loadBlob(it.getAsFile()); }
+});
+$('#bPaste').onclick = async () => {
+  try{
+    const items = await navigator.clipboard.read();
+    for(const it of items){ const t = it.types.find(t=>t.startsWith('image/')); if(t){ loadBlob(await it.getType(t)); return; } }
+    setStatus('Não há imagem na área de transferência.', 'err');
+  }catch{ setStatus('O navegador não deixou ler a área de transferência. Use Ctrl+V.', 'err'); }
+};
+const stage = $('#stage');
+stage.addEventListener('dragover', e => e.preventDefault());
+stage.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if(f && f.type.startsWith('image/')) loadBlob(f); });
+
+/* ---------- render ---------- */
+let rq = false;
+function render(){ if(rq) return; rq = true; requestAnimationFrame(()=>{ rq=false; draw(); }); }
+function draw(){
+  if(!src) return;
+  const d = outImg.data;
+  for(let i=0,p=3;i<mask.length;i++,p+=4) d[p] = (src[p]*mask[i])/255;
+  outCtx.putImageData(outImg,0,0);
+  ctx.clearRect(0,0,W,H);
+  if($('#ghost').checked){ ctx.globalAlpha = .16; ctx.drawImage(srcCanvas,0,0); ctx.globalAlpha = 1; }
+  ctx.drawImage(outCanvas,0,0);
+}
+$('#ghost').onchange = render;
+document.querySelectorAll('[data-bg]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-bg]').forEach(x=>x.classList.toggle('on', x===b));
+  $('#wrap').className = 'wrap ' + b.dataset.bg;
+});
+
+/* ---------- undo ---------- */
+function pushUndo(){ undo.push(mask.slice()); if(undo.length>25) undo.shift(); updUndo(); }
+function updUndo(){ $('#bUndo').disabled = !undo.length; }
+function doUndo(){ if(!undo.length) return; mask = undo.pop(); lastOp = null; updUndo(); render(); }
+$('#bUndo').onclick = doUndo;
+document.addEventListener('keydown', e => {
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z'){ e.preventDefault(); doUndo(); }
+});
+
+/* ---------- operação com reaplicação (tolerância ao vivo) ---------- */
+function runOp(fn){
+  pushUndo();
+  lastOp = { before: mask.slice(), run: fn };
+  fn(); render();
+}
+function rerunLast(){
+  if(!lastOp) return;
+  mask.set(lastOp.before); lastOp.run(); render();
+}
+
+/* ---------- cor / varinha ---------- */
+const tolThr = () => { const t = +$('#tol').value; return (t*4.42)**2; };
+function colorDist2(i, r,g,b){ const p=i*4; const dr=src[p]-r, dg=src[p+1]-g, db=src[p+2]-b; return dr*dr+dg*dg+db*db; }
+
+function floodFromSeeds(seeds, r,g,b, value){
+  const thr = tolThr(), contig = $('#contig').checked;
+  if(!contig){
+    for(let i=0;i<W*H;i++) if(colorDist2(i,r,g,b)<=thr) mask[i]=value;
+    return;
+  }
+  const seen = new Uint8Array(W*H), stack = new Int32Array(W*H); let sp=0;
+  for(const s of seeds){ if(!seen[s] && colorDist2(s,r,g,b)<=thr){ seen[s]=1; stack[sp++]=s; } }
+  while(sp){
+    const i = stack[--sp]; mask[i]=value;
+    const x = i%W, y = (i/W)|0;
+    if(x>0){ const j=i-1; if(!seen[j]){ seen[j]=1; if(colorDist2(j,r,g,b)<=thr) stack[sp++]=j; } }
+    if(x<W-1){ const j=i+1; if(!seen[j]){ seen[j]=1; if(colorDist2(j,r,g,b)<=thr) stack[sp++]=j; } }
+    if(y>0){ const j=i-W; if(!seen[j]){ seen[j]=1; if(colorDist2(j,r,g,b)<=thr) stack[sp++]=j; } }
+    if(y<H-1){ const j=i+W; if(!seen[j]){ seen[j]=1; if(colorDist2(j,r,g,b)<=thr) stack[sp++]=j; } }
+  }
+}
+function wandAt(x,y){
+  const i = y*W+x, p=i*4, r=src[p],g=src[p+1],b=src[p+2];
+  const value = keepMode?255:0;
+  runOp(()=>floodFromSeeds([i], r,g,b, value));
+  setStatus(`Varinha: cor rgb(${r},${g},${b}). Mexa na tolerância para ajustar ao vivo.`);
+}
+function dominantBorder(){
+  const hist = new Map(); const border = [];
+  const add = i => { border.push(i); const p=i*4; const k=(src[p]>>4)<<8|(src[p+1]>>4)<<4|(src[p+2]>>4); hist.set(k,(hist.get(k)||0)+1); };
+  for(let x=0;x<W;x++){ add(x); add((H-1)*W+x); }
+  for(let y=1;y<H-1;y++){ add(y*W); add(y*W+W-1); }
+  let best=-1,bc=0; for(const [k,c] of hist) if(c>bc){bc=c;best=k;}
+  let r=0,g=0,b=0,n=0;
+  for(const i of border){ const p=i*4; const k=(src[p]>>4)<<8|(src[p+1]>>4)<<4|(src[p+2]>>4); if(k===best){ r+=src[p];g+=src[p+1];b+=src[p+2];n++; } }
+  return { r:r/n, g:g/n, b:b/n, border, share: bc/border.length };
+}
+$('#bAuto').onclick = () => {
+  const d = dominantBorder();
+  runOp(()=>floodFromSeeds(d.border, d.r,d.g,d.b, 0));
+  setStatus(`Fundo dominante rgb(${d.r|0},${d.g|0},${d.b|0}) (${Math.round(d.share*100)}% da borda). Ajuste a tolerância; fundo com textura costuma pedir 20–35.`);
+};
+let tolT=null;
+$('#tol').oninput = e => { $('#tolV').textContent = e.target.value; clearTimeout(tolT); tolT = setTimeout(rerunLast, 60); };
+$('#contig').onchange = rerunLast;
+
+$('#bClear').onclick = () => { pushUndo(); lastOp=null; mask.fill(0); render(); setStatus('Tudo apagado. Agora use “+ Manter” para trazer de volta só o que interessa.'); setKeep(true); };
+$('#bAll').onclick = () => { pushUndo(); lastOp=null; mask.fill(255); render(); };
+
+/* ---------- limpeza ---------- */
+function components(pred, onComp){
+  const lab = new Int32Array(W*H).fill(-1), stack = new Int32Array(W*H);
+  for(let s=0;s<W*H;s++){
+    if(lab[s]!==-1 || !pred(s)) continue;
+    let sp=0, list=[]; stack[sp++]=s; lab[s]=s; let touches=false;
+    while(sp){
+      const i=stack[--sp]; list.push(i);
+      const x=i%W, y=(i/W)|0;
+      if(x===0||y===0||x===W-1||y===H-1) touches=true;
+      const nb=[x>0?i-1:-1, x<W-1?i+1:-1, y>0?i-W:-1, y<H-1?i+W:-1];
+      for(const j of nb) if(j>=0 && lab[j]===-1 && pred(j)){ lab[j]=s; stack[sp++]=j; }
+    }
+    onComp(list, touches);
+  }
+}
+$('#bIslands').onclick = () => {
+  const min = Math.max(12, Math.round(W*H*0.00004)); let n=0;
+  runOp(()=>{ n=0; components(i=>mask[i]>127, (list)=>{ if(list.length<min){ n++; for(const i of list) mask[i]=0; } }); });
+  lastOp=null; setStatus(`${n} sujeirinhas removidas.`);
+};
+$('#bHoles').onclick = () => {
+  let n=0;
+  runOp(()=>{ n=0; components(i=>mask[i]<=127, (list,touches)=>{ if(!touches){ n++; for(const i of list) mask[i]=255; } }); });
+  lastOp=null; setStatus(`${n} buracos fechados.`);
+};
+
+/* ---------- ferramentas ---------- */
+const hints = {
+  wand:'Clique numa cor: apaga (ou mantém) a região de cor parecida. A tolerância ajusta ao vivo o último clique.',
+  rect:'Arraste um retângulo. Ótimo para painéis de gráfico (+ Manter) ou para apagar o professor (− Apagar).',
+  lasso:'Contorne à mão livre a área; ao soltar, ela é aplicada.',
+  brush:'Pinte para apagar ou restaurar detalhes. Ajuste o tamanho abaixo.',
+  ai:'Clique em cima de uma figura: a IA reconhece o contorno dela. A 1ª vez baixa o modelo (~15 MB) e analisa a imagem (alguns segundos).'
+};
+function setTool(t){
+  tool = t;
+  document.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
+  $('#brushRow').classList.toggle('hidden', t!=='brush');
+  $('#aiRow').classList.toggle('hidden', t!=='ai');
+  $('#toolHint').textContent = hints[t];
+  ov.style.cursor = t==='brush' ? 'none' : 'crosshair';
+  octx.clearRect(0,0,W,H);
+  if(t==='ai' && src) samPrepare();
+}
+document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => setTool(b.dataset.t));
+function setKeep(k){ keepMode=k; $('#pKeep').classList.toggle('on',k); $('#pDel').classList.toggle('on',!k); }
+$('#pKeep').onclick = () => setKeep(true);
+$('#pDel').onclick = () => setKeep(false);
+$('#bsize').oninput = e => $('#bsizeV').textContent = e.target.value;
+setTool('wand');
+
+function pt(e){
+  const r = ov.getBoundingClientRect();
+  return { x: Math.max(0,Math.min(W-1, Math.floor((e.clientX-r.left)*W/r.width))),
+           y: Math.max(0,Math.min(H-1, Math.floor((e.clientY-r.top)*H/r.height))),
+           s: W/r.width };
+}
+let drag = null;
+ov.addEventListener('pointerdown', e => {
+  if(!src) return;
+  ov.setPointerCapture(e.pointerId);
+  const p = pt(e);
+  const keep = e.button===2 ? !keepMode : keepMode;
+  if(tool==='wand'){ wandAt(p.x,p.y); return; }
+  if(tool==='ai'){ samClick(p.x,p.y, keep); return; }
+  drag = { start:p, pts:[p], keep };
+  if(tool==='brush'){ pushUndo(); lastOp=null; paint(p, p, keep); }
+});
+ov.addEventListener('contextmenu', e => e.preventDefault());
+ov.addEventListener('pointermove', e => {
+  if(!src) return;
+  const p = pt(e);
+  octx.clearRect(0,0,W,H);
+  octx.lineWidth = 2*p.s; octx.setLineDash([8*p.s,6*p.s]);
+  const col = (drag?drag.keep:keepMode) ? '#3ccf7a' : '#ff4d4d';
+  octx.strokeStyle = col; octx.fillStyle = col + '33';
+  if(tool==='brush'){
+    const r = +$('#bsize').value * p.s / 2;
+    octx.setLineDash([]); octx.beginPath(); octx.arc(p.x,p.y,r,0,Math.PI*2); octx.stroke();
+    if(drag){ paint(drag.pts[drag.pts.length-1], p, drag.keep); drag.pts.push(p); }
+    return;
+  }
+  if(!drag) return;
+  if(tool==='rect'){
+    const a=drag.start; octx.fillRect(Math.min(a.x,p.x),Math.min(a.y,p.y),Math.abs(p.x-a.x),Math.abs(p.y-a.y));
+    octx.strokeRect(Math.min(a.x,p.x),Math.min(a.y,p.y),Math.abs(p.x-a.x),Math.abs(p.y-a.y));
+    drag.end = p;
+  } else if(tool==='lasso'){
+    drag.pts.push(p);
+    octx.beginPath(); drag.pts.forEach((q,i)=> i?octx.lineTo(q.x,q.y):octx.moveTo(q.x,q.y)); octx.closePath(); octx.fill(); octx.stroke();
+  }
+});
+ov.addEventListener('pointerup', e => {
+  if(!drag) return;
+  const d = drag; drag = null;
+  if(tool==='rect' && d.end){
+    const x0=Math.min(d.start.x,d.end.x), x1=Math.max(d.start.x,d.end.x), y0=Math.min(d.start.y,d.end.y), y1=Math.max(d.start.y,d.end.y);
+    const v = d.keep?255:0;
+    pushUndo(); lastOp=null;
+    for(let y=y0;y<=y1;y++) mask.fill(v, y*W+x0, y*W+x1+1);
+    render();
+  } else if(tool==='lasso' && d.pts.length>2){
+    const c = document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d');
+    g.fillStyle='#fff'; g.beginPath(); d.pts.forEach((q,i)=> i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y)); g.closePath(); g.fill();
+    const a = g.getImageData(0,0,W,H).data, v = d.keep?255:0;
+    pushUndo(); lastOp=null;
+    for(let i=0;i<W*H;i++) if(a[i*4+3]>127) mask[i]=v;
+    render();
+  }
+  if(tool!=='brush') octx.clearRect(0,0,W,H);
+});
+function paint(a, b, keep){
+  const r = +$('#bsize').value * a.s / 2, v = keep?255:0;
+  const dist = Math.hypot(b.x-a.x,b.y-a.y), steps = Math.max(1, Math.ceil(dist/(r/3)));
+  for(let k=0;k<=steps;k++){
+    const cx = a.x+(b.x-a.x)*k/steps, cy = a.y+(b.y-a.y)*k/steps;
+    const x0=Math.max(0,Math.floor(cx-r)), x1=Math.min(W-1,Math.ceil(cx+r)), y0=Math.max(0,Math.floor(cy-r)), y1=Math.min(H-1,Math.ceil(cy+r));
+    for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++) if((x-cx)**2+(y-cy)**2<=r*r) mask[y*W+x]=v;
+  }
+  render();
+}
+
+/* ---------- IA: Segment Anything (SlimSAM) ---------- */
+let TF = null;
+async function loadTF(){
+  if(TF) return TF;
+  setStatus('Carregando biblioteca de IA…','busy');
+  TF = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3');
+  TF.env.allowLocalModels = false;
+  return TF;
+}
+const sam = { model:null, proc:null, emb:null, inputs:null, embKey:-1, busy:false };
+async function samPrepare(){
+  if(sam.busy) return;
+  if(sam.embKey===imgVersion && sam.emb) return;
+  sam.busy = true;
+  try{
+    const T = await loadTF();
+    if(!sam.model){
+      setStatus('Baixando modelo Segment Anything (só na 1ª vez)…','busy');
+      sam.model = await T.SamModel.from_pretrained('Xenova/slimsam-77-uniform');
+      sam.proc = await T.AutoProcessor.from_pretrained('Xenova/slimsam-77-uniform');
+    }
+    setStatus('IA analisando a imagem…','busy');
+    const v = imgVersion;
+    const img = new T.RawImage(new Uint8ClampedArray(src), W, H, 4).rgb();
+    const inputs = await sam.proc(img);
+    const emb = await sam.model.get_image_embeddings(inputs);
+    if(v===imgVersion){ sam.inputs=inputs; sam.emb=emb; sam.embKey=v; }
+    setStatus('IA pronta: clique sobre a figura.');
+  }catch(e){ console.error(e); setStatus('Falha ao carregar a IA (precisa de internet na 1ª vez): '+e.message,'err'); }
+  sam.busy = false;
+}
+async function samClick(x,y,keep){
+  if(sam.embKey!==imgVersion){ await samPrepare(); if(sam.embKey!==imgVersion) return; }
+  try{
+    setStatus('Segmentando…','busy');
+    const T = TF;
+    const [rh, rw] = sam.inputs.reshaped_input_sizes[0];
+    const input_points = new T.Tensor('float32', new Float32Array([x/W*rw, y/H*rh]), [1,1,1,2]);
+    const input_labels = new T.Tensor('int64', new BigInt64Array([1n]), [1,1,1]);
+    const out = await sam.model({ ...sam.emb, input_points, input_labels });
+    const masks = await sam.proc.post_process_masks(out.pred_masks, sam.inputs.original_sizes, sam.inputs.reshaped_input_sizes);
+    const m = masks[0]; const data = m.data; const n = W*H;
+    const scores = out.iou_scores.data;
+    const areas = [0,1,2].map(k=>{ let a=0; for(let i=k*n;i<(k+1)*n;i++) if(data[i]) a++; return a; });
+    let pick;
+    const g = $('#aiGran').value;
+    if(g==='big') pick = [0,1,2].sort((a,b)=>areas[b]-areas[a])[0];
+    else if(g==='small') pick = [0,1,2].filter(k=>areas[k]>0).sort((a,b)=>areas[a]-areas[b])[0] ?? 0;
+    else { pick=0; for(let k=1;k<3;k++) if(scores[k]>scores[pick]) pick=k; }
+    const v = keep?255:0, off = pick*n;
+    pushUndo(); lastOp=null;
+    for(let i=0;i<n;i++) if(data[off+i]) mask[i]=v;
+    render();
+    setStatus(`Figura ${keep?'mantida':'apagada'} (${Math.round(areas[pick]/n*100)}% da imagem). Se pegou errado: Desfazer e troque “Seleção”.`);
+  }catch(e){ console.error(e); setStatus('Erro na IA: '+e.message,'err'); }
+}
+
+/* ---------- IA automática (BRIA RMBG-1.4) ---------- */
+let rmbg = null;
+$('#bAiAuto').onclick = async () => {
+  try{
+    const T = await loadTF();
+    if(!rmbg){
+      setStatus('Baixando modelo RMBG-1.4 (~45 MB, só na 1ª vez)…','busy');
+      rmbg = {
+        model: await T.AutoModel.from_pretrained('briaai/RMBG-1.4', { config:{ model_type:'custom' } }),
+        proc: await T.AutoProcessor.from_pretrained('briaai/RMBG-1.4', { config:{
+          do_normalize:true, do_pad:false, do_rescale:true, do_resize:true,
+          image_mean:[0.5,0.5,0.5], feature_extractor_type:'ImageFeatureExtractor',
+          image_std:[1,1,1], resample:2, rescale_factor:0.00392156862745098, size:{width:1024,height:1024} } })
+      };
+    }
+    setStatus('IA automática processando…','busy');
+    const img = new T.RawImage(new Uint8ClampedArray(src), W, H, 4).rgb();
+    const { pixel_values } = await rmbg.proc(img);
+    const { output } = await rmbg.model({ input: pixel_values });
+    const mimg = await T.RawImage.fromTensor(output[0].mul(255).to('uint8')).resize(W,H);
+    pushUndo(); lastOp=null;
+    for(let i=0;i<W*H;i++) mask[i] = Math.min(mask[i], mimg.data[i]);
+    render(); setStatus('IA automática aplicada (combina com o que já estava apagado).');
+  }catch(e){ console.error(e); setStatus('Falha na IA automática: '+e.message,'err'); }
+};
+
+/* ---------- exportar ---------- */
+$('#feather').oninput = e => $('#featherV').textContent = e.target.value;
+function blurMask(m, r){
+  if(!r) return m;
+  const tmp = new Float32Array(W*H), outm = new Uint8Array(W*H), win = 2*r+1;
+  for(let y=0;y<H;y++){ let s=0; for(let x=-r;x<=r;x++) s+=m[y*W+Math.min(W-1,Math.max(0,x))];
+    for(let x=0;x<W;x++){ tmp[y*W+x]=s/win; s+= m[y*W+Math.min(W-1,x+r+1)] - m[y*W+Math.max(0,x-r)]; } }
+  for(let x=0;x<W;x++){ let s=0; for(let y=-r;y<=r;y++) s+=tmp[Math.min(H-1,Math.max(0,y))*W+x];
+    for(let y=0;y<H;y++){ outm[y*W+x]=s/win; s+= tmp[Math.min(H-1,y+r+1)*W+x] - tmp[Math.max(0,y-r)*W+x]; } }
+  return outm;
+}
+function exportBlob(){
+  const m = blurMask(mask, +$('#feather').value);
+  let x0=0,y0=0,x1=W-1,y1=H-1;
+  if($('#trim').checked){
+    x0=W;y0=H;x1=-1;y1=-1;
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(m[y*W+x]>8){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+    if(x1<0) return null;
+  }
+  const w=x1-x0+1, h=y1-y0+1;
+  const c = document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d');
+  const im = g.createImageData(w,h), d=im.data;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const i=(y+y0)*W+(x+x0), p=i*4, q=(y*w+x)*4;
+    d[q]=src[p]; d[q+1]=src[p+1]; d[q+2]=src[p+2]; d[q+3]=src[p+3]*m[i]/255;
+  }
+  g.putImageData(im,0,0);
+  return new Promise(res => c.toBlob(res,'image/png'));
+}
+$('#bSave').onclick = async () => {
+  const p = exportBlob(); if(!p) return setStatus('Nada para exportar: tudo está apagado.','err');
+  const b = await p; const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  const t = new Date(); a.download = `recorte-${t.getFullYear()}${String(t.getMonth()+1).padStart(2,'0')}${String(t.getDate()).padStart(2,'0')}-${String(t.getHours()).padStart(2,'0')}${String(t.getMinutes()).padStart(2,'0')}${String(t.getSeconds()).padStart(2,'0')}.png`;
+  a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  setStatus('PNG baixado.');
+};
+$('#bCopy').onclick = async () => {
+  const p = exportBlob(); if(!p) return setStatus('Nada para exportar: tudo está apagado.','err');
+  try{ await navigator.clipboard.write([new ClipboardItem({'image/png': p})]); setStatus('PNG copiado. Cole no seu resumo com Ctrl+V.'); }
+  catch(e){ setStatus('O navegador bloqueou a cópia; use “Baixar PNG”.','err'); }
+};
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>
